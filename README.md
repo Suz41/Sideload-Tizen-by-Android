@@ -103,3 +103,12 @@ To sideload other apps, download the `.wgt` package and pass it as arguments to 
 | :--- | :--- | :--- |
 | **🎬 VLC Player** | `curl -L -o vlctv.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py \| python3 - vlctv.wgt VLCTV` |
 | **🍺 Ad-Free YouTube** | `curl -L -o TizenBrew.wgt https://github.com/reisxd/TizenBrew/releases/latest/download/TizenBrewStandalone.wgt` | `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py \| python3 - TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone` |
+
+---
+
+## 🤝 Credits
+
+* **[Suz41](https://github.com/Suz41):** For designing and testing this direct Termux-to-TV sideloading method.
+* **[Apps2Samsung](https://github.com/Apps2Samsung):** For hosting and compiling the Tizen community app packages.
+* **[reisxd (TizenBrew)](https://github.com/reisxd/TizenBrew):** For developing the TizenBrew standalone YouTube client.
+* **Google Antigravity:** For engineering the raw Tizen/SDB custom socket file transfer and installation script.
