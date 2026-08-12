@@ -4,6 +4,27 @@ A complete step-by-step tutorial to sideload Tizen application packages (`.wgt` 
 
 ---
 
+## 🗺️ Process Flowchart
+
+```mermaid
+flowchart TD
+    Start([Start Sideloading]) --> TVDev[1. Enable Developer Mode on Samsung TV]
+    TVDev --> TVHost[2. Set Host IP to Phone Hotspot IP & Restart TV]
+    TVHost --> TermuxKey[3. Generate & Sync RSA Keys in Termux]
+    TermuxKey --> Connect[4. Connect adb connect TV_IP:26101]
+    Connect --> InstallPy[5. Run install.py Script in Termux]
+    InstallPy --> Stream[6. Stream .wgt App Package to TV Share Path]
+    Stream --> Register[7. TV Installs & Registers .wgt Package]
+    Register --> Launch[8. App Automatically Launches on TV Screen]
+    Launch --> End([Complete])
+    
+    style Start fill:#22c55e,stroke:#fff,stroke-width:2px,color:#fff
+    style End fill:#22c55e,stroke:#fff,stroke-width:2px,color:#fff
+    style InstallPy fill:#6366f1,stroke:#fff,stroke-width:2px,color:#fff
+```
+
+---
+
 ## 🌟 Key Features
 * 📱 **No PC / Laptop Required:** Everything is performed directly inside Termux on your mobile phone.
 * 💾 **No USB Pendrives:** Apps are streamed directly to the TV over your local network.
