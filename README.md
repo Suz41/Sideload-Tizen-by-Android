@@ -33,6 +33,16 @@ flowchart TD
 
 ---
 
+## 📋 Prerequisites (One-Time Setup in Termux)
+
+If you haven't installed Python or ADB yet inside Termux, run this command:
+
+```bash
+pkg update && pkg install python android-tools -y
+```
+
+---
+
 ## 📺 Step 1: Configure Developer Mode on Samsung TV
 
 1. Open the **Smart Hub** (Home menu) on your TV and navigate to the **Apps** panel.
