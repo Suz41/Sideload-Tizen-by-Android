@@ -1,32 +1,30 @@
-# 📺 Samsung Tizen TV App Sideloading Guide (from Termux)
+# Tizen TV Sideloading Guide
 
-This guide explains how to sideload `.wgt` applications onto a Samsung Smart TV directly from **Termux on Android** over a Wi-Fi hotspot, without a PC or USB drive.
-
----
-
-## 📡 1. Network & TV Setup
-
-1. **Get TV IP Address:** Look up your TV's IP address under the TV's Network Status menu (e.g., `10.187.217.145`).
-2. **Get Phone Hotspot IP:** In Termux, verify your phone's IP interface address (e.g., `10.187.217.60`).
-3. **Turn on TV Developer Mode:**
-   * Go to **Smart Hub / Apps** panel.
-   * On your TV remote, enter the PIN code sequence **`12345`**.
-   * Toggle **Developer Mode** to **ON**.
-   * Set the **Host IP** field to your phone's hotspot IP address (e.g., `10.187.217.60`).
-   * **Reboot the TV:** Hold the Power button on the remote for 5 seconds until the TV turns off and turns back on displaying the Samsung logo. This opens **Port `26101`** on the TV.
+Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC or USB drive.
 
 ---
 
-## 🔐 2. Cryptographic RSA Key Sync
+## 📺 1. TV Configuration
 
-Because Samsung SDB connects using the ADB wire protocol, you must copy your Tizen keys to your Android ADB location to authenticate properly from Termux:
+1. Locate your **TV IP Address** in TV settings (e.g., `10.187.217.145`).
+2. Locate your **Phone Hotspot IP** (e.g., `10.187.217.60`).
+3. Open the **Apps** panel on the TV.
+4. Press **`12345`** on the remote to open Developer Mode settings.
+5. Toggle **Developer Mode** to **ON** and set the **Host IP** to your Phone Hotspot IP.
+6. **Reboot the TV:** Hold the remote Power button down until the TV shuts off and restarts with the Samsung logo. (This opens Port `26101`).
+
+---
+
+## 🔐 2. Termux Keys Setup
+
+Copy cryptographic Tizen keys to Android ADB paths to authenticate connections:
 
 ```bash
 # Generate keys if they do not exist
 mkdir -p ~/.android ~/.tizen
 adb keygen ~/.tizen/sdbkey 2>/dev/null
 
-# Sync Tizen keys to Android tools location
+# Sync Tizen keys to ADB paths
 cp ~/.tizen/sdbkey ~/.android/adbkey
 cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
@@ -35,7 +33,7 @@ cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 
 ## 🚀 3. Sideloading Script (`install.py`)
 
-Save the following Python code as `install.py` in your Termux home directory. This script acts as a custom SDB client, streaming the `.wgt` archive directly over a socket connection to your TV, bypassing the need for x86_64 PC binaries.
+Save this code as `install.py` in your Termux home directory:
 
 ```python
 import socket
@@ -43,9 +41,9 @@ import struct
 import os
 import sys
 
-tv_ip = "10.187.217.145"
-local_wgt = sys.argv[1] # e.g. "Jellyfin.wgt"
-app_id = sys.argv[2]   # e.g. "Jellyfin"
+tv_ip = "10.187.217.145" # Replace with your TV IP
+local_wgt = sys.argv[1]   # e.g., "Jellyfin.wgt"
+app_id = sys.argv[2]      # e.g., "Jellyfin"
 remote_wgt = f"/home/owner/share/tmp/sdk_tools/tmp/{local_wgt}"
 
 def recv_exact(s, n):
@@ -82,7 +80,7 @@ def run_shell(cmd_str):
     s.close()
     return out.decode(errors="ignore")
 
-# 1. Connect & Push File over SDB Sync Socket
+# 1. Stream File over SDB Sync Socket
 s = socket.socket()
 s.settimeout(30.0)
 s.connect((tv_ip, 26101))
@@ -116,27 +114,26 @@ s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(done_pld), sum(done_pld)
 recv_pkt(s)
 s.close()
 
-# 2. Trigger Installation & Launch on TV
+# 2. Trigger Installation & Launch
 run_shell(f"0 vd_appinstall {app_id} {remote_wgt}")
 run_shell(f"0 pkgcmd -i -t wgt -p {remote_wgt}")
 run_shell(f"0 app_launcher -s {app_id}")
-print(f"SUCCESS: {local_wgt} installed and launched on TV!")
+print(f"SUCCESS: {local_wgt} installed!")
 ```
 
 ---
 
-## 📲 4. Commands to Connect and Run
+## 🏃 4. Installation Commands
 
-1. Open Termux on your phone.
-2. Establish the connection:
+1. Establish authorization bridge:
    ```bash
-   adb connect 10.187.217.145:26101
+   adb connect <TV_IP>:26101
    ```
-3. Run the installer script:
+2. Deploy packages:
    ```bash
    python3 install.py <file.wgt> <AppID>
    ```
 
-* **Example for Jellyfin:** `python3 install.py Jellyfin.wgt Jellyfin`
-* **Example for TizenBrew:** `python3 install.py TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone`
-* **Example for VLC TV:** `python3 install.py vlctv.wgt VLCTV`
+* **Jellyfin:** `python3 install.py Jellyfin.wgt Jellyfin`
+* **TizenBrew:** `python3 install.py TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone`
+* **VLC TV:** `python3 install.py vlctv.wgt VLCTV`
