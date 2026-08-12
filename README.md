@@ -28,13 +28,18 @@ flowchart LR
 
 ---
 
-## 🔒 Security Best Practices & Warnings
+## 🔒 Security & Privacy Auditing
 
-* **Disclaimer of Responsibility:** Enabling developer features and sideloading applications carries inherent risks. By using this repository, it is assumed that you possess the necessary technical understanding and accept full responsibility for modifications made to your devices. Use your own judgment and proceed responsibly.
-* **Network Security:** Developer Mode opens SDB port `26101` on your local network. Only enable this on secure, trusted home Wi-Fi networks. Never use public or untrusted Wi-Fi.
-* **Sideloading Risk (Third-Party Apps):** Downloading and installing `.wgt` application files from unverified third-party websites can pose significant security risks. Only sideload files from official developer sources (like the official Jellyfin GitHub repository) or trusted community-vetted release channels.
-* **Tizen OS vs Generic Android Boxes:** Samsung Smart TVs run Tizen OS. While safer than generic Android TV boxes, keeping TV firmware updated is always recommended.
-* **Safe Script Execution:** For maximum security, we recommend downloading, inspecting, and then executing the script locally (**Method A** below) rather than piping directly from the internet.
+### 🛡️ Why the Installer Script (`install.py`) is Safe:
+* **100% Local Execution:** The script runs entirely on your phone. It does not store, log, track, or share any personal data, TV tokens, keys, or files with any remote servers.
+* **Raw Network Transparency:** It uses standard Python `socket` connections directly to your TV's SDB port (`26101`). There are no third-party APIs or analytics wrappers. You can inspect the complete open-source code inside [install.py](file:///data/data/com.termux/files/home/git-repos/Sideload-Tizen-by-Android/install.py) at any time.
+
+### ⚠️ Where the Actual Risk Lies:
+* **Third-Party Application Packages:** While the installer script is fully secure and transparent, the `.wgt` application files themselves (such as Jellyfin, VLC, or TizenBrew) are compiled and hosted by third parties. **The user accepts all risks associated with the apps they choose to sideload.**
+
+### 🌐 Network Best Practices:
+* **Developer Mode:** Dev mode opens SDB port `26101` on your local network. Only enable this on secure, trusted home Wi-Fi subnets. Never use public or untrusted Wi-Fi.
+* **Tizen OS Safety:** Samsung Smart TVs run Tizen OS. While safer than generic Android TV boxes, keeping TV firmware updated is always recommended.
 
 ---
 
