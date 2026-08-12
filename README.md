@@ -53,6 +53,11 @@ Open **Termux** on your phone, copy and paste this one-liner to generate and syn
 mkdir -p ~/.android ~/.tizen && adb keygen ~/.tizen/sdbkey 2>/dev/null && cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
 
+### 💡 What does this command do?
+* **`mkdir -p ~/.android ~/.tizen`**: Creates hidden directories `.android` (for Android ADB) and `.tizen` (for Tizen TV Developer Tools) in your user directory.
+* **`adb keygen ~/.tizen/sdbkey 2>/dev/null`**: Generates a secure public/private RSA cryptographic key pair acting as your phone's unique "digital fingerprint/passport" to authenticate with the TV.
+* **`cp ~/.tizen/sdbkey...`**: Copies the generated Tizen keys into your Android ADB directories. This tricks the standard Android debugger (`adb`) into using Tizen developer credentials to connect seamlessly to Samsung TVs on Port `26101`.
+
 ---
 
 ## 🚀 Step 3: Setup the Sideload Python Script
