@@ -1,60 +1,42 @@
-### Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio, No Certificates, No Licensing) (Just use some brain)
+# Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio, No Certificates, No Licensing) (Just use some brain)
 
-Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, Tizen Studio SDK, or dealing with Samsung author/distributor certificates and licensing signatures.
+A complete step-by-step tutorial to sideload Tizen application packages (`.wgt` files) onto your Samsung Smart TV using **only Termux on your Android phone** over local Wi-Fi.
 
 ---
 
-## ⚡ Quick Copy Commands
+## 🌟 Key Features
+* 📱 **No PC / Laptop Required:** Everything is performed directly inside Termux on your mobile phone.
+* 💾 **No USB Pendrives:** Apps are streamed directly to the TV over your local network.
+* 📦 **No Tizen Studio SDK:** Bypasses downloading and configuring gigabytes of developer tooling.
+* 🔑 **No Certificates or Licensing signatures:** Install any prebuilt `.wgt` file without author or distributor signature errors.
 
-Tap and hold to copy these commands:
+---
 
-**Key Setup (Termux):**
-```
+## 📺 Step 1: Configure Developer Mode on Samsung TV
+
+1. Open the **Smart Hub** (Home menu) on your TV and navigate to the **Apps** panel.
+2. Using your physical TV remote control, press the numeric sequence **`12345`**.
+3. A developer menu pop-up will appear. Toggle **Developer Mode** to **ON**.
+4. Identify your **Phone's Wi-Fi / Hotspot IP Address** (e.g., `10.187.217.60`) and enter it in the **Host IP** field.
+5. Click **OK** or **Submit**.
+6. **Reboot the TV:** Hold the remote Power button down for 5 seconds until the TV turns off and turns back on displaying the Samsung logo. (This opens Port `26101`).
+7. Go to TV Network Settings and write down your **TV IP Address** (e.g., `10.187.217.145`).
+
+---
+
+## 🔐 Step 2: Initialize Cryptographic Keys in Termux
+
+Open **Termux** on your phone, copy and paste this one-liner to generate and sync Tizen authorization keys to your local ADB path:
+
+```bash
 mkdir -p ~/.android ~/.tizen && adb keygen ~/.tizen/sdbkey 2>/dev/null && cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
 
-**Connect TV:**
-```
-adb connect <TV_IP>:26101
-```
-
-**Install App:**
-```
-python3 install.py <file.wgt> <AppID>
-```
-
 ---
 
-## 📺 1. TV Configuration
+## 🚀 Step 3: Setup the Sideload Python Script
 
-1. Locate your **TV IP Address** in TV settings (e.g., `10.187.217.145`).
-2. Locate your **Phone Hotspot IP** (e.g., `10.187.217.60`).
-3. Open the **Apps** panel on the TV.
-4. Press **`12345`** on the remote to open Developer Mode settings.
-5. Toggle **Developer Mode** to **ON** and set the **Host IP** to your Phone Hotspot IP.
-6. **Reboot the TV:** Hold the remote Power button down until the TV shuts off and restarts with the Samsung logo. (This opens Port `26101`).
-
----
-
-## 🔐 2. Termux Keys Setup
-
-Copy cryptographic Tizen keys to Android ADB paths to authenticate connections:
-
-```bash
-# Generate keys if they do not exist
-mkdir -p ~/.android ~/.tizen
-adb keygen ~/.tizen/sdbkey 2>/dev/null
-
-# Sync Tizen keys to ADB paths
-cp ~/.tizen/sdbkey ~/.android/adbkey
-cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
-```
-
----
-
-## 🚀 3. Sideloading Script (`install.py`)
-
-Save this code as `install.py` in your Termux home directory:
+Save the following Python code as **`install.py`** in your Termux home directory:
 
 ```python
 import socket
@@ -62,7 +44,7 @@ import struct
 import os
 import sys
 
-tv_ip = "10.187.217.145" # Replace with your TV IP
+tv_ip = "10.187.217.145" # Replace with your TV IP Address
 local_wgt = sys.argv[1]   # e.g., "Jellyfin.wgt"
 app_id = sys.argv[2]      # e.g., "Jellyfin"
 remote_wgt = f"/home/owner/share/tmp/sdk_tools/tmp/{local_wgt}"
@@ -144,8 +126,32 @@ print(f"SUCCESS: {local_wgt} installed!")
 
 ---
 
-## 🏃 4. Installation Commands
+## 🏃 Step 4: Run Installation Commands
 
-* **Jellyfin:** `python3 install.py Jellyfin.wgt Jellyfin`
-* **TizenBrew:** `python3 install.py TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone`
-* **VLC TV:** `python3 install.py vlctv.wgt VLCTV`
+Download any `.wgt` package file to Termux. Then connect to your TV and install it:
+
+1. **Connect to the TV:**
+   ```bash
+   adb connect <TV_IP_ADDRESS>:26101
+   ```
+2. **Execute installation script:**
+   ```bash
+   python3 install.py <file.wgt> <AppID>
+   ```
+
+---
+
+## 📋 App Identifiers Catalog
+
+| Application | File Name | AppID / Package Name |
+| :--- | :--- | :--- |
+| **Jellyfin TV** | `Jellyfin.wgt` | `Jellyfin` |
+| **TizenBrew (YouTube Ad-free)** | `TizenBrew.wgt` | `xvvl3S1bvH.TizenBrewStandalone` |
+| **VLC TV** | `vlctv.wgt` | `VLCTV` |
+
+---
+
+## 🛠️ Troubleshooting Tips
+
+* **ADB Status Unauthorized:** If `adb devices` shows your TV as `unauthorized`, double-check that your phone's Wi-Fi hotspot IP is set correctly as the **Host IP** in the TV Developer menu, and that you rebooted your TV by holding the power button.
+* **Connection Timeout:** Ensure both your TV and Android phone are connected to the exact same Wi-Fi subnet.
