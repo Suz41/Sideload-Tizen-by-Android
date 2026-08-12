@@ -126,6 +126,12 @@ adb shell 0 pkgcmd -u -t wgt -q <AppID>
 
 ## ❓ FAQ (Frequently Asked Questions)
 
+* **Q: Why does the guide use `adb` commands to connect instead of `sdb`?**
+  * **A:** Samsung's SDB (Smart Development Bridge) uses the exact same underlying protocol as Google's ADB (Android Debug Bridge). Since ADB is readily available inside Termux via `android-tools`, we can use native `adb` commands directly to connect to the TV's SDB port (`26101`) without needing to compile or run custom SDB binaries on Android.
+* **Q: Does this work on all Tizen TV versions?**
+  * **A:** This method works out-of-the-box for Tizen **5.0, 5.5, 6.0, and 6.5** (TV models from 2019 to 2022). Older Tizen versions (4.0 and below) and newer Tizen versions (7.0 and above) enforce stricter DUID (Device Unique Identifier) signature checking, meaning unsigned or generic community packages might block installation unless signed with a certificate matching the TV DUID.
+* **Q: Can I compile and sideload my own custom or modified `.wgt` app packages?**
+  * **A:** If you modify an app's source code or build a `.wgt` from scratch, you will need to sign it with a Tizen developer certificate first. This tool is designed to sideload pre-compiled, pre-signed community app packages.
 * **Q: Can I sideload premium DRM apps like Netflix, HBO Max, or Disney+?**
   * **A:** No. Premium streaming apps require official digital signatures and licensing keys from Samsung and the respective streaming providers to decrypt DRM feeds. Sideloading is meant for open-source home media players (Jellyfin, VLC) and custom player frameworks (TizenBrew).
 * **Q: Do I have to repeat this process every time I turn on my TV?**
