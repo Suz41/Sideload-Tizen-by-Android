@@ -47,15 +47,15 @@ flowchart TD
 
 ## 🔐 Step 2: Initialize Cryptographic Keys in Termux
 
-Open **Termux** on your phone, copy and paste this one-liner to generate and sync Tizen authorization keys to your local ADB path:
+Open **Termux** on your phone, copy and paste this smart one-liner. It will **only** generate keys if they don't already exist, avoiding TV authorization resets:
 
 ```bash
-mkdir -p ~/.android ~/.tizen && adb keygen ~/.tizen/sdbkey 2>/dev/null && cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
+mkdir -p ~/.android ~/.tizen && [ -f ~/.tizen/sdbkey ] || adb keygen ~/.tizen/sdbkey 2>/dev/null; cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
 
 ### 💡 What does this command do?
 * **`mkdir -p ~/.android ~/.tizen`**: Creates hidden directories `.android` (for Android ADB) and `.tizen` (for Tizen TV Developer Tools) in your user directory.
-* **`adb keygen ~/.tizen/sdbkey 2>/dev/null`**: Generates a secure public/private RSA cryptographic key pair acting as your phone's unique "digital fingerprint/passport" to authenticate with the TV.
+* **`[ -f ~/.tizen/sdbkey ] || adb keygen...`**: Checks if an authorization key already exists. If it does, it skips key generation to prevent resetting connection permissions. If not, it creates a new secure public/private RSA cryptographic key pair.
 * **`cp ~/.tizen/sdbkey...`**: Copies the generated Tizen keys into your Android ADB directories. This tricks the standard Android debugger (`adb`) into using Tizen developer credentials to connect seamlessly to Samsung TVs on Port `26101`.
 
 ---
