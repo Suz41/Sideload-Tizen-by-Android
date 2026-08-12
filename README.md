@@ -30,7 +30,7 @@ flowchart TD
 * 💾 **No USB Pendrives:** Apps are streamed directly to the TV over your local network.
 * 📦 **No Tizen Studio SDK:** Bypasses downloading and configuring gigabytes of developer tooling.
 * 🔑 **No Certificates or Licensing signatures:** Install any prebuilt `.wgt` file without author or distributor signature errors.
-* 🚀 **Zero File Footprint (Optional):** Run the installation script directly over the internet without saving it to your phone storage!
+* 🍿 **1-Click Jellyfin Default:** Defaults automatically to Jellyfin setup with no arguments required!
 
 ---
 
@@ -66,39 +66,36 @@ Copy and paste this line into Termux and press **Enter**. (This lets your TV tru
 mkdir -p ~/.android ~/.tizen && [ -f ~/.tizen/sdbkey ] || adb keygen ~/.tizen/sdbkey 2>/dev/null; cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
 
-### 2. Download and Run the Installer Script
-Choose **one** of the following methods to run the installer:
-
-* **Method A (No Saving - Run directly from the internet):**
-  Stream and run the script on the fly without keeping the script file:
-  ```bash
-  curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 - <file.wgt> <AppID>
-  ```
-  *(Example: `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 - Jellyfin.wgt Jellyfin`)*
-
-* **Method B (Download & Save to phone):**
-  Download the file first to your phone:
-  ```bash
-  curl -L -o install.py https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py
-  ```
-  Then run the saved script:
-  ```bash
-  python3 install.py <file.wgt> <AppID>
-  ```
+### 2. Download Jellyfin TV Package
+Download the Jellyfin TV app package directly to your phone:
+```bash
+curl -L -o Jellyfin.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt
+```
 
 ---
 
-## 📋 App Identifiers Catalog
+## 🚀 Step 3: Connect and Sideload Jellyfin!
 
-| Application | File Name | AppID / Package Name |
+### 1. Connect to Your TV
+Type this command in Termux, replacing `<TV_IP>` with your TV's actual IP address from Step 1, then press **Enter**:
+```bash
+adb connect <TV_IP>:26101
+```
+*(Example: `adb connect 10.187.217.145:26101`)*
+
+### 2. Install Jellyfin (Direct Stream - No saving script)
+Run this command to send and install Jellyfin onto your TV screen:
+```bash
+curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 -
+```
+
+---
+
+## 📋 Other TV Apps (VLC & TizenBrew)
+
+To sideload other apps, download the `.wgt` package and pass it as arguments to `install.py`:
+
+| App Name | Download Command | Sideload Command |
 | :--- | :--- | :--- |
-| **Jellyfin TV** | `Jellyfin.wgt` | `Jellyfin` |
-| **TizenBrew (YouTube Ad-free)** | `TizenBrew.wgt` | `xvvl3S1bvH.TizenBrewStandalone` |
-| **VLC TV** | `vlctv.wgt` | `VLCTV` |
-
----
-
-## 🛠️ Troubleshooting Tips
-
-* **ADB Status Unauthorized:** If `adb devices` shows your TV as `unauthorized`, double-check that your phone's Wi-Fi hotspot IP is set correctly as the **Host IP** in the TV Developer menu, and that you rebooted your TV by holding the power button.
-* **Connection Timeout:** Ensure both your TV and Android phone are connected to the exact same Wi-Fi subnet.
+| **🎬 VLC Player** | `curl -L -o vlctv.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py \| python3 - vlctv.wgt VLCTV` |
+| **🍺 Ad-Free YouTube** | `curl -L -o TizenBrew.wgt https://github.com/reisxd/TizenBrew/releases/latest/download/TizenBrewStandalone.wgt` | `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py \| python3 - TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone` |
