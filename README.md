@@ -112,6 +112,7 @@ To sideload other apps, download the `.wgt` package and pass it as arguments to 
 
 ## 🤝 Acknowledgments
 
+* **[Jellyfin](https://jellyfin.org/):** For the official open-source media server ecosystem and Tizen TV client application.
 * **[Apps2Samsung](https://github.com/Apps2Samsung):** For compiling the Tizen community app packages.
 * **[reisxd (TizenBrew)](https://github.com/reisxd/TizenBrew):** For developing the standalone TizenBrew YouTube client.
 * **Google Antigravity:** For engineering the raw custom Tizen/SDB socket script logic.
