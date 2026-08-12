@@ -30,6 +30,7 @@ flowchart LR
 
 ## 🔒 Security Best Practices & Warnings
 
+* **Disclaimer of Responsibility:** Enabling developer features and sideloading applications carries inherent risks. By using this repository, it is assumed that you possess the necessary technical understanding and accept full responsibility for modifications made to your devices. Use your own judgment and proceed responsibly.
 * **Network Security:** Developer Mode opens SDB port `26101` on your local network. Only enable this on secure, trusted home Wi-Fi networks. Never use public or untrusted Wi-Fi.
 * **Sideloading Risk (Third-Party Apps):** Downloading and installing `.wgt` application files from unverified third-party websites can pose significant security risks. Only sideload files from official developer sources (like the official Jellyfin GitHub repository) or trusted community-vetted release channels.
 * **Tizen OS vs Generic Android Boxes:** Samsung Smart TVs run Tizen OS. While safer than generic Android TV boxes, keeping TV firmware updated is always recommended.
