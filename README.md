@@ -1,4 +1,4 @@
-#### Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio, No Certificates, No Licensing) (Just use some brain)
+#### Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio, No Certificates, No Licensing)
 
 Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, Tizen Studio SDK, or dealing with Samsung author/distributor certificates and licensing signatures.
 
@@ -56,11 +56,25 @@ Copy and paste this line into Termux and press **Enter**. (This lets your TV tru
 mkdir -p ~/.android ~/.tizen && [ -f ~/.tizen/sdbkey ] || adb keygen ~/.tizen/sdbkey 2>/dev/null; cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
 ```
 
-### 2. Download Jellyfin TV Package
-Download the Jellyfin TV app package directly to your phone:
-```bash
-curl -L -o Jellyfin.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt
-```
+### 2. Download the Installer Tool
+Choose **one** of the following methods to download the installer script:
+
+* **Method A (No Saving - Run directly from the internet):**
+  Stream and run the script on the fly without keeping the script file:
+  ```bash
+  curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 - <file.wgt> <AppID>
+  ```
+  *(Example: `curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 - Jellyfin.wgt Jellyfin`)*
+
+* **Method B (Download & Save to phone):**
+  Download the file first to your phone:
+  ```bash
+  curl -L -o install.py https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py
+  ```
+  Then run the saved script:
+  ```bash
+  python3 install.py <file.wgt> <AppID>
+  ```
 
 ---
 
