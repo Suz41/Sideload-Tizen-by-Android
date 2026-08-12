@@ -28,6 +28,14 @@ flowchart LR
 
 ---
 
+## 🔒 Security Best Practices & Warnings
+
+* **Network Security:** Developer Mode opens SDB port `26101` on your local network. Only enable this on secure, trusted home Wi-Fi networks. Never use public or untrusted Wi-Fi.
+* **Tizen OS vs Generic Android Boxes:** Samsung Smart TVs run Tizen OS. While safer than generic Android TV boxes, keeping TV firmware updated is always recommended.
+* **Safe Script Execution:** For maximum security, we recommend downloading, inspecting, and then executing the script locally (**Method A** below) rather than piping directly from the internet.
+
+---
+
 ## 📋 Prerequisites
 
 Install Python and ADB tools inside Termux:
@@ -64,16 +72,29 @@ mkdir -p ~/.android ~/.tizen && [ -f ~/.tizen/sdbkey ] || adb keygen ~/.tizen/sd
 adb connect <TV_IP_ADDRESS>:26101
 ```
 
-### Install Jellyfin (Default):
-Run the installer directly from this repository without saving files:
-```bash
-curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 -
-```
+### Download the Installer Script (Recommended):
+Choose **one** of the following methods to run the installer:
+
+* **Method A: Download, Inspect & Run (Recommended & Secure):**
+  Download the installer file locally to inspect the code first:
+  ```bash
+  curl -L -o install.py https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py
+  ```
+  Then execute the script:
+  ```bash
+  python3 install.py
+  ```
+
+* **Method B: Pipe execution (Shortcut):**
+  Stream and run the script on the fly:
+  ```bash
+  curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 -
+  ```
 
 ### Install other apps:
-Download the `.wgt` package and pass the file name and AppID to the installer:
+Pass the file name and AppID as arguments:
 ```bash
-curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 - <file.wgt> <AppID>
+python3 install.py <file.wgt> <AppID>
 ```
 
 | Application | Download Command | Package / AppID |
