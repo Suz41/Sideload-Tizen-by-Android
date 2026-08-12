@@ -165,6 +165,12 @@ Download any `.wgt` package file to Termux. Then connect to your TV and install 
    python3 install.py <file.wgt> <AppID>
    ```
 
+### 📝 Example Run Command:
+To install **Jellyfin TV App**, you would run:
+```bash
+python3 install.py Jellyfin.wgt Jellyfin
+```
+
 ---
 
 ## 📋 App Identifiers Catalog
