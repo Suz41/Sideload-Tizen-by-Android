@@ -4,6 +4,26 @@ Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV direc
 
 ---
 
+## ⚡ Quick Copy & Paste Commands
+
+Run this one-liner in Termux to automatically create and sync Tizen authorization keys:
+
+```bash
+mkdir -p ~/.android ~/.tizen && adb keygen ~/.tizen/sdbkey 2>/dev/null && cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
+```
+
+Connect and deploy app in two simple steps:
+
+```bash
+# 1. Connect phone to TV over Wi-Fi
+adb connect <TV_IP>:26101
+
+# 2. Install your downloaded .wgt app package
+python3 install.py <AppName.wgt> <AppID>
+```
+
+---
+
 ## 📺 1. TV Configuration
 
 1. Locate your **TV IP Address** in TV settings (e.g., `10.187.217.145`).
@@ -124,15 +144,6 @@ print(f"SUCCESS: {local_wgt} installed!")
 ---
 
 ## 🏃 4. Installation Commands
-
-1. Establish authorization bridge:
-   ```bash
-   adb connect <TV_IP>:26101
-   ```
-2. Deploy packages:
-   ```bash
-   python3 install.py <file.wgt> <AppID>
-   ```
 
 * **Jellyfin:** `python3 install.py Jellyfin.wgt Jellyfin`
 * **TizenBrew:** `python3 install.py TizenBrew.wgt xvvl3S1bvH.TizenBrewStandalone`
