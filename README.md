@@ -1,6 +1,6 @@
-# Sideloading apps in Samsung Tizen TV by Android - No PC, No Pendrive, No Tizen Studio, Easy Way (Just use some brain)
+# Sideloading apps in Samsung Tizen TV by Android - No PC, No Pendrive, No Tizen Studio, No Certificates, No Licensing, Easy Way (Just use some brain)
 
-Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, or installing the heavy Samsung Tizen Studio SDK.
+Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, Tizen Studio SDK, or dealing with Samsung author/distributor certificates and licensing signatures.
 
 ---
 
