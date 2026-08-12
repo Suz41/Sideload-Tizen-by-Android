@@ -106,9 +106,9 @@ To sideload other apps, download the `.wgt` package and pass it as arguments to 
 
 ---
 
-## 👤 Creator
+## 👤 Developed by
 
-* **[Suz41](https://github.com/Suz41):** Creator of the direct Termux-to-TV sideloading method, project designer, and main developer.
+* **[Suz41](https://github.com/Suz41):** Developer of this direct Termux-to-TV sideloading project workflow.
 
 ## 🤝 Acknowledgments
 
