@@ -1,10 +1,6 @@
-# Sideload Tizen by Android
+#### Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio)
 
-> Sideload Tizen applications (`.wgt`) onto Samsung Smart TVs directly from Termux on Android. No PC, USB drives, or Tizen Studio SDK required.
-
-[![Platform](https://img.shields.io/badge/Platform-Tizen%205.5%20%7C%206.0%20%7C%206.5-blue.svg)](#)
-[![Host](https://img.shields.io/badge/Host-Android%20%28Termux%29-green.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-purple.svg)](#)
+Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, or Tizen Studio SDK.
 
 ---
 
@@ -12,9 +8,9 @@
 
 ```mermaid
 flowchart LR
-    A[1. Enable TV Dev Mode] --> B[2. Sync RSA keys]
-    B --> C[3. Connect over Wi-Fi]
-    C --> D[4. Stream & install]
+    DevMode[1. TV Dev Mode] --> TermuxKey[2. Sync keys]
+    TermuxKey --> Connect[3. Connect adb]
+    Connect --> Install[4. Sideload app]
 ```
 
 ---
@@ -108,7 +104,7 @@ python3 install.py <file.wgt> <AppID>
 | Application | Download Command | Package / AppID |
 | :--- | :--- | :--- |
 | **🍿 Jellyfin TV** | `curl -L -o Jellyfin.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt` | `Jellyfin` (Default) |
-| **🎬 VLC TV** | `curl -L -o vlctv.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `VLCTV` |
+| **🎬 VLC TV** | `curl -L -o vlctv.wgt & https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `VLCTV` |
 | **🍺 TizenBrew** | `curl -L -o TizenBrew.wgt https://github.com/reisxd/TizenBrew/releases/latest/download/TizenBrewStandalone.wgt` | `xvvl3S1bvH.TizenBrewStandalone` |
 
 ---
