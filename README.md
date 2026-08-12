@@ -106,9 +106,12 @@ To sideload other apps, download the `.wgt` package and pass it as arguments to 
 
 ---
 
-## 🤝 Credits
+## 👤 Creator
 
-* **[Suz41](https://github.com/Suz41):** For designing and testing this direct Termux-to-TV sideloading method.
-* **[Apps2Samsung](https://github.com/Apps2Samsung):** For hosting and compiling the Tizen community app packages.
-* **[reisxd (TizenBrew)](https://github.com/reisxd/TizenBrew):** For developing the TizenBrew standalone YouTube client.
-* **Google Antigravity:** For engineering the raw Tizen/SDB custom socket file transfer and installation script.
+* **[Suz41](https://github.com/Suz41):** Author & Creator of this direct Termux-to-TV sideloading project workflow.
+
+## 🤝 Acknowledgments
+
+* **[Apps2Samsung](https://github.com/Apps2Samsung):** For compiling the Tizen community app packages.
+* **[reisxd (TizenBrew)](https://github.com/reisxd/TizenBrew):** For developing the standalone TizenBrew YouTube client.
+* **Google Antigravity:** For engineering the raw custom Tizen/SDB socket script logic.
