@@ -58,7 +58,8 @@ pkg update && pkg install python android-tools -y
 2. Press **`12345`** on your remote control to open Developer settings.
 3. Turn **Developer Mode** to **ON** and set the **Host IP** to your phone's Hotspot IP address.
 4. **Reboot the TV:** Hold the remote Power button down for 5 seconds until the TV restarts.
-5. Note the **TV IP Address** from Network Settings.
+5. **Find your TV IP Address:** Navigate to:
+   `Settings -> General -> Network -> Network Status -> IP Settings` and write down the IP Address (e.g., `10.187.217.145`).
 
 ---
 
@@ -109,6 +110,28 @@ python3 install.py <file.wgt> <AppID>
 | **🍿 Jellyfin TV** | `curl -L -o Jellyfin.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt` | `Jellyfin` (Default) |
 | **🎬 VLC TV** | `curl -L -o vlctv.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `VLCTV` |
 | **🍺 TizenBrew** | `curl -L -o TizenBrew.wgt https://github.com/reisxd/TizenBrew/releases/latest/download/TizenBrewStandalone.wgt` | `xvvl3S1bvH.TizenBrewStandalone` |
+
+---
+
+## 🗑️ 4. How to Uninstall Sideloaded Apps
+
+To remove a sideloaded app from your TV, run this command inside Termux, replacing `<AppID>` with the App ID from the table above:
+
+```bash
+adb shell 0 pkgcmd -u -t wgt -q <AppID>
+```
+*(Example: `adb shell 0 pkgcmd -u -t wgt -q Jellyfin`)*
+
+---
+
+## ❓ FAQ (Frequently Asked Questions)
+
+* **Q: Can I sideload premium DRM apps like Netflix, HBO Max, or Disney+?**
+  * **A:** No. Premium streaming apps require official digital signatures and licensing keys from Samsung and the respective streaming providers to decrypt DRM feeds. Sideloading is meant for open-source home media players (Jellyfin, VLC) and custom player frameworks (TizenBrew).
+* **Q: Do I have to repeat this process every time I turn on my TV?**
+  * **A:** No. Once sideloaded, the application remains permanently on your TV app grid until you choose to uninstall it.
+* **Q: Can I disable TV Developer Mode after installing?**
+  * **A:** Yes, once the app is installed, you can turn Developer Mode off and reboot the TV. The installed apps will continue to work.
 
 ---
 
