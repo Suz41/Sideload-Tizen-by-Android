@@ -1,148 +1,208 @@
-#### Sideloading Apps in Samsung Tizen TV by Android (No PC, No Pendrive, No Tizen Studio)
+# Sideloading Apps in Samsung Tizen TV by Android (No PC, No USB, No Tizen Studio)
 
-Sideload Tizen application packages (`.wgt` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, or Tizen Studio SDK.
-
----
-
-## 🗺️ Process Flow
-
-```mermaid
-flowchart LR
-    DevMode[1. TV Dev Mode] --> TermuxKey[2. Sync keys]
-    TermuxKey --> Connect[3. Connect adb]
-    Connect --> Install[4. Sideload app]
-```
+Sideload Tizen application packages (`.wgt` and `.tpk` files) onto a Samsung Smart TV directly from **Termux on Android** without a PC, USB drive, or Tizen Studio SDK.
 
 ---
 
-## 🌟 Key Features
+## Quick Start (Single Command)
 
-* **PC-Less Deployment:** Run the entire process inside Termux on your phone.
-* **Direct Network Stream:** Files are transferred directly over Wi-Fi (no USB drives).
-* **Zero Studio Dependency:** Bypasses Tizen Studio SDK and Samsung's certificate/signing manager.
-* **Streamlined Installer:** Built-in default configuration targets Jellyfin TV installation in a single click.
+Open Termux on your phone and run:
 
----
-
-## 🔒 Security & Privacy Auditing
-
-### 🛡️ Why the Installer Script (`install.py`) is Safe:
-* **100% Local Execution:** The script runs entirely on your phone. It does not store, log, track, or share any personal data, TV tokens, keys, or files with any remote servers.
-* **Raw Network Transparency:** It uses standard Python `socket` connections directly to your TV's SDB port (`26101`). There are no third-party APIs or analytics wrappers. You can inspect the complete open-source code inside [install.py](file:///data/data/com.termux/files/home/git-repos/Sideload-Tizen-by-Android/install.py) at any time.
-
-### ⚠️ Where the Actual Risk Lies:
-* **Third-Party Application Packages:** While the installer script is fully secure and transparent, the `.wgt` application files themselves (such as Jellyfin, VLC, or TizenBrew) are compiled and hosted by third parties. **The user accepts all risks associated with the apps they choose to sideload.**
-
-### 🌐 Network Best Practices:
-* **Developer Mode:** Dev mode opens SDB port `26101` on your local network. Only enable this on secure, trusted home Wi-Fi subnets. Never use public or untrusted Wi-Fi.
-* **Tizen OS Safety:** Samsung Smart TVs run Tizen OS. While safer than generic Android TV boxes, keeping TV firmware updated is always recommended.
-
----
-
-## 📋 Prerequisites
-
-Install Python and ADB tools inside Termux:
 ```bash
-pkg update && pkg install python android-tools -y
+cd ~/Sideload-Tizen-by-Android && ./setup.sh
 ```
+
+*(If cloning for the first time: `git clone https://github.com/Suz41/Sideload-Tizen-by-Android.git && cd Sideload-Tizen-by-Android && ./setup.sh`)*
+
+The script will automatically:
+1. Check and silently install any missing tools (`python`, `adb`, `curl`).
+2. Generate all required ADB/Tizen authorization keys.
+3. Create your dedicated folder: **`Internal Storage -> Download -> Samsung-T-Sideload`**.
+4. Show your phone's IP and launch the interactive TV Manager!
 
 ---
 
-## 📺 1. TV Setup
+## 1-Minute TV Setup
 
 1. Open **Apps** on your Samsung TV.
-2. Press **`12345`** on your remote control to open Developer settings.
-3. Turn **Developer Mode** to **ON** and set the **Host IP** to your phone's Hotspot IP address.
-4. **Reboot the TV:** Hold the remote Power button down for 5 seconds until the TV restarts.
-5. **Find your TV IP Address:** Navigate to:
-   `Settings -> General -> Network -> Network Status -> IP Settings` and write down the IP Address (e.g., `10.187.217.145`).
+2. Press **`1 2 3 4 5`** on your remote to open Developer Mode.
+3. Turn **Developer Mode** to **ON**.
+4. Set **Host IP** to your phone's IP (displayed clearly by `./setup.sh`).
+5. **Reboot the TV:** Hold your remote's **Power** button for 5 seconds until the TV restarts.
 
 ---
 
-## 🔐 2. Termux Setup
 
-Sync your cryptographic Tizen keys to ADB paths inside Termux:
+---
 
-```bash
-mkdir -p ~/.android ~/.tizen && [ -f ~/.tizen/sdbkey ] || adb keygen ~/.tizen/sdbkey 2>/dev/null; cp ~/.tizen/sdbkey ~/.android/adbkey && cp ~/.tizen/sdbkey.pub ~/.android/adbkey.pub
+## Interface Preview & Screenshots
+
+<div align="center">
+
+### 1. Setup & TV Network Instructions
+```text
+========================================================
+          Samsung Tizen TV Sideload Setup               
+========================================================
+
+Put your .wgt / .tpk files in File Manager at:
+    Internal Storage -> Download -> Samsung-T-Sideload
+
+YOUR PHONE IP : 192.168.1.5
+
+ 1. ON YOUR SAMSUNG TV:
+    • Apps -> Press 1 2 3 4 5 on remote
+    • Turn Developer Mode -> ON
+    • Host IP -> Enter: 192.168.1.5
+    • Hold TV Power button 5s to restart TV
+
+ 2. FIND TV IP ON TV:
+    • Settings -> General -> Network -> Network Status
+========================================================
 ```
 
----
-
-## 🚀 3. Sideloading Apps
-
-### Connect to your TV:
-```bash
-adb connect <TV_IP_ADDRESS>:26101
+### 2. Live Interactive Dashboard
+```text
+============================================================
+           Tizen Sideload Manager (Termux TUI)          
+============================================================
+ Version  : v2.0.0 [Up-to-date]
+ Status   : [ONLINE]
+ TV IP    : 10.253.229.145:26101
+ Model    : Samsung QLED 4K (Tizen 6.5)
+ Storage  : 2.8G free of 4.0G (30% used)
+ DUID     : 123456789ABCDEF...
+------------------------------------------------------------
+ [1]  Sideload a Local .wgt / .tpk file
+ [2]  Download & Sideload Pre-signed Apps
+ [3]   Change TV IP Address (Auto-Scan Subnet)
+ [4]  Show Installed Apps on TV
+ [5]   Uninstall an App from TV
+ [r]  Refresh (Re-scan files & TV status)
+ [6]  Exit
+============================================================
 ```
 
-### Download the Installer Script (Recommended):
-Choose **one** of the following methods to run the installer:
+### 3. Pre-Signed Community App Store
+```text
+=== Pre-signed Community App Store ===
 
-* **Method A: Download, Inspect & Run (Recommended & Secure):**
-  Download the installer file locally to inspect the code first:
-  ```bash
-  curl -L -o install.py https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py
-  ```
-  Then execute the script:
-  ```bash
-  python3 install.py
-  ```
+--- Framework ---
+ [ 1] TizenBrew (Homebrew App Store & Module Runner)
 
-* **Method B: Pipe execution (Shortcut):**
-  Stream and run the script on the fly:
-  ```bash
-  curl -sL https://raw.githubusercontent.com/Suz41/Sideload-Tizen-by-Android/main/install.py | python3 -
-  ```
+--- Streaming ---
+ [ 2] TizenTube (Ad-free YouTube + SponsorBlock)
+ [ 3] Jellyfin TV (Home Media Server Client)
+ [ 4] Stremio TV (Community App)
+ [ 5] SmartTV Twitch (Ad-free Twitch Client)
 
-### Install other apps:
-Pass the file name and AppID as arguments:
-```bash
-python3 install.py <file.wgt> <AppID>
+--- Media ---
+ [ 6] VLC Media Player (Native Video Player)
+
+--- Gaming ---
+ [ 7] Moonlight TV (4K PC Game Streaming)
+ [ 8] Chiaki (PlayStation 4/5 Remote Play)
+ [ 9] Doom (Classic Doom Port)
+ [10] GameBoy Emulator
+
+--- Utilities ---
+ [11] AirTizen (Apple AirPlay Receiver)
+ [12] FCastReceiver (Open Chromecast Alternative)
+ [13] Tailscale (Mesh VPN Client - Native TPK)
+ [14] iperf3 (Network Speed Tester)
+
+ [15] Browse All Community Apps (50+ Packages Live Archive)...
+
+Select app [1-15] or 0 to cancel: 
 ```
 
-| Application | Download Command | Package / AppID |
-| :--- | :--- | :--- |
-| **🍿 Jellyfin TV** | `curl -L -o Jellyfin.wgt https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt` | `Jellyfin` (Default) |
-| **🎬 VLC TV** | `curl -L -o vlctv.wgt & https://github.com/Apps2Samsung/tizen-community-packages/raw/main/vlctv.wgt` | `VLCTV` |
-| **🍺 TizenBrew** | `curl -L -o TizenBrew.wgt https://github.com/reisxd/TizenBrew/releases/latest/download/TizenBrewStandalone.wgt` | `xvvl3S1bvH.TizenBrewStandalone` |
+### 4. Real-Time Streaming & Installation
+```text
+Connecting to Samsung TV...
+Opening file transfer channel...
+Streaming TizenBrew.wgt to TV...
+Uploading: [] 82% (2.4 MB/s)
+ File transfer complete.
 
----
+Installing app on TV...
+Launching app on TV...
 
-## 🗑️ 4. How to Uninstall Sideloaded Apps
-
-To remove a sideloaded app from your TV, run this command inside Termux, replacing `<AppID>` with the App ID from the table above:
-
-```bash
-adb shell 0 pkgcmd -u -t wgt -q <AppID>
+ SUCCESS: App installed and launched on TV!
 ```
-*(Example: `adb shell 0 pkgcmd -u -t wgt -q Jellyfin`)*
+
+</div>
+
+## Interactive Manager Features
+
+```text
+============================================================
+           Tizen Sideload Manager (Termux TUI)          
+============================================================
+ Status   : [ONLINE]
+ TV IP    : 10.253.229.145:26101
+ Model    : Samsung Smart TV (Tizen 6.5)
+ DUID     : 123456789ABCDEF...
+------------------------------------------------------------
+ [1]  Sideload a Local .wgt file
+ [2]  Download & Sideload Pre-signed Apps
+ [3]   Change TV IP Address (Auto-Scan Subnet)
+ [4]  Show Installed Apps on TV
+ [5]   Uninstall an App from TV
+ [r]  Refresh (Re-scan files & TV status)
+ [6]  Exit
+============================================================
+```
+
+### Key Highlights:
+* **Auto-Folder Scanning:** Place any downloaded `.wgt` or `.tpk` file into `Internal Storage -> Download -> Samsung-T-Sideload` on your phone. The script finds and validates it automatically!
+* **Full Dual-Format Support (.wgt & .tpk):** Supports both web apps (`.wgt`) and native high-performance binaries (`.tpk`) with manifest parsing.
+* **Live TV Dashboard:** Displays TV online status, TV Model Name, Tizen OS version, hardware DUID, and **Available TV Storage Space** (`df -h`).
+* **Live OS Compatibility Checker:** The App Store compares your TV's Tizen version against each app's requirements and tags them with `[Compatible]` or `[Incompatible]`.
+* **Auto TV Discovery:** Automatically scans your local Wi-Fi subnet across all 254 addresses to find your TV's SDB port (`26101`) in seconds.
+* **1-Click Community App Store:** Download and install 14+ popular pre-signed apps, plus an instant live directory browser with access to **50+ community packages** (IPTV players, KickTV, retro emulators, security camera feeds, and utilities).
+* **Smart Ranked Uninstaller:** Queries TV package activity and sorts apps from **Least Used to Frequently Used**, making it easy to free up space.
+* **Integrated Auto-Updater:** Press `[u]` inside the menu or run `./setup.sh` to automatically pull updates from GitHub.
+* **Every-Step Error Explainer:** If any step fails (Wi-Fi, signature, permissions, or storage), it prints a clear diagnostic explaining what happened and provides an exact 1-2-3 fix.
 
 ---
 
-## ❓ FAQ (Frequently Asked Questions)
+## Security & Privacy
 
-* **Q: Why does the guide use `adb` commands to connect instead of `sdb`?**
-  * **A:** Samsung's SDB (Smart Development Bridge) uses the exact same underlying protocol as Google's ADB (Android Debug Bridge). Since ADB is readily available inside Termux via `android-tools`, we can use native `adb` commands directly to connect to the TV's SDB port (`26101`) without needing to compile or run custom SDB binaries on Android.
-* **Q: Does this work on all Tizen TV versions?**
-  * **A:** This method works out-of-the-box for Tizen **5.0, 5.5, 6.0, and 6.5** (TV models from 2019 to 2022). Older Tizen versions (4.0 and below) and newer Tizen versions (7.0 and above) enforce stricter DUID (Device Unique Identifier) signature checking, meaning unsigned or generic community packages might block installation unless signed with a certificate matching the TV DUID.
-* **Q: Can I compile and sideload my own custom or modified `.wgt` app packages?**
-  * **A:** If you modify an app's source code or build a `.wgt` from scratch, you will need to sign it with a Tizen developer certificate first. This tool is designed to sideload pre-compiled, pre-signed community app packages.
-* **Q: Can I sideload premium DRM apps like Netflix, HBO Max, or Disney+?**
-  * **A:** No. Premium streaming apps require official digital signatures and licensing keys from Samsung and the respective streaming providers to decrypt DRM feeds. Sideloading is meant for open-source home media players (Jellyfin, VLC) and custom player frameworks (TizenBrew).
-* **Q: Do I have to repeat this process every time I turn on my TV?**
-  * **A:** No. Once sideloaded, the application remains permanently on your TV app grid until you choose to uninstall it.
-* **Q: Can I disable TV Developer Mode after installing?**
-  * **A:** Yes, once the app is installed, you can turn Developer Mode off and reboot the TV. The installed apps will continue to work.
+* **100% Local Execution:** The script runs entirely on your phone. It never logs, tracks, or shares any data, TV tokens, keys, or files with external servers.
+* **Direct Network Stream:** Uses raw Python sockets straight to your TV's SDB port (`26101`).
+* **Developer Mode Safety:** Only keep Developer Mode active on secure, trusted home Wi-Fi networks.
 
 ---
 
-## 👤 Developed by
+## Author
 
-* **[Suz41](https://github.com/Suz41):** Developer of this direct Termux-to-TV sideloading project workflow.
+* **[Suz41](https://github.com/Suz41):** Developer of this direct Android-to-TV Tizen sideloading workflow.
 
-## 🤝 Acknowledgments
+## Acknowledgments & Upstream Credits
 
-* **[Jellyfin Project](https://jellyfin.org/):** For the open-source media ecosystem.
-* **[Apps2Samsung](https://github.com/Apps2Samsung):** For compiled package distribution.
-* **[TizenBrew](https://github.com/reisxd/TizenBrew):** For standalone YouTube framework development.
+Every application available in the 1-click community store was created, ported, or maintained by incredible open-source developers. Full credit goes to:
+
+* **[reisxd](https://github.com/reisxd):** Creator of **TizenBrew** (standalone homebrew loader & package signer) and **TizenTube** (ad-free TV YouTube framework).
+* **[Apps2Samsung](https://github.com/Apps2Samsung):** For maintaining community package repository builds, automated signing actions, and hosting distribution mirrors.
+* **[Jellyfin Project](https://jellyfin.org/):** For the native Jellyfin TV client and open-source media ecosystem.
+* **[Stremio](https://www.stremio.com/):** For the official and community Tizen smart TV streaming application port.
+* **[VideoLAN (VLC)](https://www.videolan.org/):** For the VLC media engine and [PatrickSt1991](https://github.com/PatrickSt1991) for the VLC Tizen TV port.
+* **[fgl27](https://github.com/fgl27):** For **SmartTV_Twitch**, the open-source ad-free Twitch client for Tizen.
+* **[Moonlight Stream](https://moonlight-stream.org/):** For NVIDIA GameStream/Sunshine PC game streaming protocol, and [brightcraft](https://github.com/brightcraft) / [OneLiberty](https://github.com/OneLiberty) for the Tizen ports.
+* **[Chiaki-ng](https://github.com/streetpea/chiaki-ng):** For PlayStation 4/5 Remote Play client, and [Trent407](https://github.com/Trent407) for the Tizen TV package.
+* **[dos-ise](https://github.com/dos-ise):** For porting classic **Doom** and **GameBoy Emulator** natively to Samsung Tizen OS.
+* **[MrHumanRebel](https://github.com/MrHumanRebel):** For **AirTizen**, bringing Apple AirPlay support to Samsung TVs.
+* **[FUTO](https://futo.org/):** For **FCastReceiver**, an open-source wireless casting alternative to Chromecast.
+* **[Tailscale](https://tailscale.com/):** For the mesh VPN protocol, and [PatrickSt1991](https://github.com/PatrickSt1991) for packaging native Tizen TPK binaries.
+* **[Dmitry Maksakov](https://github.com/DmitryMaksakov):** For **iperf3-TV**, enabling direct network throughput testing on Tizen.
+* **[Termux Project](https://termux.dev/):** For providing the powerful Linux environment on Android that makes PC-less sideloading a reality.
+
+---
+
+## Disclaimer & Risk Disclosure
+
+* **Educational & Personal Use Only:** This tool is provided solely for personal educational use, developer testing, and sideloading open-source, community-developed home media software onto your own hardware.
+* **Third-Party Applications:** The installer script is 100% open-source, local, and transparent. However, the applications and packages you choose to download and sideload (`.wgt` / `.tpk` files) are created and distributed by independent third parties. The author of this repository assumes no responsibility or liability for third-party package stability, performance, or potential security implications.
+* **Network & Device Responsibility:** Enabling Developer Mode opens your TV's debugging port (`26101`) to your local network. It should only be enabled on trusted private home networks. The user assumes full technical understanding and responsibility when operating their hardware in Developer Mode.
+* **Trademarks:** Samsung, Tizen, Android, Termux, and all related brand names, logos, and trademarks belong to their respective owners and are used here solely for descriptive and identification purposes.
+* **AI Assistance:** Portions of the tooling, documentation, automated scripts, and error diagnostics were developed and refined with the assistance of artificial intelligence (Google Gemini / Antigravity pair-programming).
