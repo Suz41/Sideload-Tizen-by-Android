@@ -35,7 +35,7 @@ The script will automatically:
 
 ---
 
-## Interface Preview & Screenshots
+## Interface Preview
 
 <div align="center">
 
