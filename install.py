@@ -240,7 +240,7 @@ def get_saved_tv_ip():
                 ip = f.read().strip()
                 if ip: return ip
         except Exception: pass
-    return "10.253.229.145"
+    return None
 
 def save_tv_ip(ip):
     try:
@@ -623,6 +623,26 @@ def main():
 
     # Interactive TUI Mode
     tv_ip = get_saved_tv_ip()
+
+    if not tv_ip:
+        print(f"\n{BOLD}=== First-Time Setup: Connect to your Samsung TV ==={RESET}")
+        print("No saved TV IP address found.")
+        print(" [1] 🔍 Auto-Scan Wi-Fi Network for Samsung TV (Recommended)")
+        print(" [2] ✍️  Type TV IP Address Manually")
+        init_choice = input("\nSelect [1-2]: ").strip()
+        if init_choice == "2":
+            tv_ip = input("Enter your Samsung TV IP Address: ").strip()
+        else:
+            tv_ip = scan_network_for_tv()
+            if not tv_ip:
+                tv_ip = input("\nAuto-scan did not detect TV. Enter TV IP manually: ").strip()
+
+        if tv_ip:
+            save_tv_ip(tv_ip)
+            print(f"{GREEN}✔ Saved TV IP: {tv_ip}{RESET}")
+        else:
+            tv_ip = "192.168.1.100"
+
 
     while True:
         is_online = check_tv_online(tv_ip)
