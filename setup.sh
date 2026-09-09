@@ -1,8 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -e
 
+# Resolve actual script directory even when executed via symlink or PATH
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
+
 # 0. Check for Updates from GitHub
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -d "$SCRIPT_DIR/.git" ]; then
     (
         cd "$SCRIPT_DIR"
@@ -10,9 +18,9 @@ if [ -d "$SCRIPT_DIR/.git" ]; then
         LOCAL_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
         REMOTE_HASH=$(git rev-parse origin/main 2>/dev/null || echo "")
         if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
-            echo "⚡ Update available! Updating to latest version..."
+            echo "Update available! Updating to latest version..."
             git pull origin main >/dev/null 2>&1 || true
-            echo "✔ Updated successfully!"
+            echo "Updated successfully!"
             sleep 1
         fi
     )
@@ -53,10 +61,10 @@ echo "========================================================"
 echo "          Samsung Tizen TV Sideload Setup               "
 echo "========================================================"
 echo ""
-echo " 📁 Put your .wgt files in File Manager at:"
+echo " Put your .wgt / .tpk files in File Manager at:"
 echo "    Internal Storage -> Download -> Samsung-T-Sideload"
 echo ""
-echo " 📱 YOUR PHONE IP : $PHONE_IP"
+echo " YOUR PHONE IP : $PHONE_IP"
 echo ""
 echo " 1. ON YOUR SAMSUNG TV:"
 echo "    • Apps -> Press 1 2 3 4 5 on remote"
@@ -69,6 +77,6 @@ echo "    • Settings -> General -> Network -> Network Status"
 echo "========================================================"
 echo ""
 
-# 5. Launch python manager
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 5. Launch python manager from real script directory
+cd "$SCRIPT_DIR"
 python3 "$SCRIPT_DIR/install.py" "$@"
