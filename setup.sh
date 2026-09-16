@@ -18,11 +18,11 @@ if [ -d "$SCRIPT_DIR/.git" ]; then
     if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         CUR_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "2.1.0")
         REMOTE_VER=$(git -C "$SCRIPT_DIR" show origin/main:install.py 2>/dev/null | grep "^SCRIPT_VERSION =" | cut -d'"' -f2 || echo "latest")
-        echo "⚡ Update available: v$CUR_VER ➜ v$REMOTE_VER! Updating..."
+        echo "[UPDATE] Update available: v$CUR_VER -> v$REMOTE_VER! Updating..."
         git -C "$SCRIPT_DIR" pull origin main >/dev/null 2>&1 || true
         NEW_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "$REMOTE_VER")
-        echo "✔ Updated successfully to v$NEW_VER!"
-        echo "🔄 Auto-restarting script..."
+        echo "[OK] Updated successfully to v$NEW_VER!"
+        echo "[RESTART] Auto-restarting script..."
         sleep 1
         exec "$SCRIPT_DIR/setup.sh" "$@"
     fi
@@ -88,15 +88,15 @@ echo ""
 echo " Put your .wgt / .tpk files in File Manager at:"
 echo "    Internal Storage -> Download -> Samsung-T-Sideload"
 echo ""
-echo "┌───────────────────────────────────────────────────────┐"
-echo "│  👉 WHAT TO INPUT IN SAMSUNG TV DEVELOPER MODE:       │"
-echo "├───────────────────────────────────────────────────────┤"
-echo "│  1. Open 'Apps' -> Press 1 2 3 4 5 on TV remote       │"
-echo "│  2. Turn Developer Mode -> [ ON ]                     │"
-echo "│  3. In 'Host PC IP' box, enter:                       │"
-echo "│     👉  $PHONE_IP"
-echo "│  4. Hold TV Remote Power button 5s to reboot TV       │"
-echo "└───────────────────────────────────────────────────────┘"
+echo "+-------------------------------------------------------+"
+echo "|  [!] WHAT TO INPUT IN SAMSUNG TV DEVELOPER MODE:      |"
+echo "+-------------------------------------------------------+"
+echo "|  1. Open 'Apps' -> Press 1 2 3 4 5 on TV remote       |"
+echo "|  2. Turn Developer Mode -> [ ON ]                     |"
+echo "|  3. In 'Host PC IP' box, enter:                       |"
+echo "|     -> $PHONE_IP"
+echo "|  4. Hold TV Remote Power button 5s to reboot TV       |"
+echo "+-------------------------------------------------------+"
 if [ -n "$SAVED_TV_IP" ]; then
 echo " Detected Samsung TV IP : $SAVED_TV_IP:26101"
 fi
