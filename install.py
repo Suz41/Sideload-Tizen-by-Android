@@ -64,22 +64,23 @@ def explain_tv_error(err_str, context="install"):
     print(f"{YELLOW}╚════════════════════════════════════════════════════════════════════════╝{RESET}")
 
     # STEP 1: CONNECTION / NETWORK FAILURES
-    if any(k in err_lower for k in ["connection failed", "cannot connect", "timed out", "errno 111", "refused", "no route"]):
-        print(f" {RED}{BOLD}🚨 STAGE: TV Network & Connection Failure{RESET}")
+    if any(k in err_lower for k in ["connection failed", "cannot connect", "timed out", "errno 111", "refused", "no route", "reset by peer", "broken pipe", "errno 104"]):
+        phone_ip = get_local_wifi_ip()
+        print(f" {RED}{BOLD}🚨 STAGE: TV Connection Rejected (Reset by Peer / Timeout){RESET}")
         print(f" {YELLOW}------------------------------------------------------------------------{RESET}")
-        print(" ❓ WHAT YOU DID WRONG:")
-        print("    1. Your Phone and TV are NOT on the exact same Wi-Fi or Hotspot.")
-        print("    2. Or Developer Mode is NOT active on the TV.")
-        print("    3. Or you forgot to reboot the TV after changing Developer Mode.")
-        print("    4. Or the TV IP address changed.")
+        print(" ❓ WHY SAMSUNG TV REJECTED THE CONNECTION:")
+        print("    1. Host PC IP mismatch: Samsung TV strictly requires that the Host PC IP")
+        print(f"       in Developer Mode matches your phone's Wi-Fi IP ({phone_ip}).")
+        print("    2. Or Developer Mode is NOT turned ON.")
+        print("    3. Or TV was not rebooted after toggling Developer Mode.")
         print("")
-        print(f" {GREEN}{BOLD}👉 EXACT STEPS TO FIX IT:{RESET}")
-        print("    Step 1: Check Wi-Fi -> Phone and TV must show identical Wi-Fi names.")
-        print("    Step 2: On TV Remote -> Open 'Apps' -> Press 1 2 3 4 5.")
-        print("    Step 3: Toggle 'Developer Mode' to [ ON ].")
-        print("    Step 4: Enter your phone's IP in 'Host IP'.")
-        print("    Step 5: Hold TV Remote Power button for 5 sec until TV restarts.")
-        print("    Step 6: In this menu, choose Option [3] -> [1] to Auto-Scan your TV.")
+        print(f" {GREEN}{BOLD}👉 EXACT STEPS TO FIX IT (Takes 30 seconds):{RESET}")
+        print("    Step 1: On TV Remote -> Open 'Apps' -> Press 1 2 3 4 5.")
+        print("    Step 2: Toggle 'Developer Mode' to [ ON ].")
+        print(f"    Step 3: In 'Host PC IP' box, enter: {CYAN}{BOLD}{phone_ip}{RESET}")
+        print("    Step 4: Look at TV screen: if prompted to allow connection, click ALLOW.")
+        print("    Step 5: Hold TV Remote Power button for 5 sec until TV reboots with Samsung logo.")
+        print("    Step 6: Run 'tizen' again.")
 
     # STEP 2: UNSIGNED PACKAGE (SIGNATURE)
     elif any(k in err_lower for k in ["failed[-11]", "invalid signature", "signature verification", "signature missing"]):
@@ -335,24 +336,24 @@ def run_tv_shell(tv_ip, cmd_str):
     s.settimeout(15.0)
     try:
         s.connect((tv_ip, 26101))
-    except Exception as e:
-        return f"Connection failed: {e}"
-    s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
-    s.recv(1024)
-    service = f"shell:{cmd_str}\x00".encode()
-    s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
-    cmd, r_id, l_id, p = recv_pkt(s)
-    out = b""
-    try:
+        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
+        s.recv(1024)
+        service = f"shell:{cmd_str}\x00".encode()
+        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
+        cmd, r_id, l_id, p = recv_pkt(s)
+        out = b""
         while True:
             c, a0, a1, p = recv_pkt(s)
             if not c or c == b"CLSE": break
             if p: out += p
             if c == b"WRTE":
                 s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
-    except Exception: pass
-    s.close()
-    return out.decode(errors="ignore").strip()
+        s.close()
+        return out.decode(errors="ignore").strip()
+    except Exception as e:
+        try: s.close()
+        except Exception: pass
+        return f"Connection failed: {e}"
 
 def ensure_adb_connected(tv_ip):
     try:
@@ -416,51 +417,52 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     s.settimeout(15.0)
     try:
         s.connect((tv_ip, 26101))
+        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
+        recv_pkt(s)
+
+        service = b"sync:\x00"
+        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
+        cmd, r_id, l_id, p = recv_pkt(s)
+
+        dest = remote_wgt.encode() + b",33279"
+        send_pld = struct.pack("<4sI", b"SEND", len(dest)) + dest
+        s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(send_pld), sum(send_pld)&0xffffffff, 0x45545257^0xffffffff) + send_pld)
+        recv_pkt(s)
+
+        file_size = os.path.getsize(wgt_path)
+        bytes_sent = 0
+        start_time = time.time()
+
+        with open(wgt_path, "rb") as f:
+            while True:
+                blk = b""
+                while len(blk) < 32768:
+                    chunk = f.read(4000)
+                    if not chunk: break
+                    blk += struct.pack("<4sI", b"DATA", len(chunk)) + chunk
+                if not blk: break
+                s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(blk), sum(blk)&0xffffffff, 0x45545257^0xffffffff) + blk)
+                bytes_sent += len(blk)
+                elapsed = time.time() - start_time
+                speed = (bytes_sent / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
+                pct = int((bytes_sent / file_size) * 100)
+                bar = ("█" * (pct // 5)).ljust(20, "░")
+                print(f"Uploading: [{bar}] {pct}% ({speed:.1f} MB/s)", end="\r")
+                cmd, a0, a1, p = recv_pkt(s)
+                if cmd == b"WRTE":
+                    s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
+
+        done_pld = struct.pack("<4sI", b"DONE", int(os.path.getmtime(wgt_path)))
+        s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(done_pld), sum(done_pld)&0xffffffff, 0x45545257^0xffffffff) + done_pld)
+        recv_pkt(s)
+        s.close()
+        print(f"\n{GREEN}✔ File transfer complete.{RESET}")
     except Exception as e:
-        print(f"{RED}❌ Cannot connect to TV at {tv_ip}:26101 ({e}){RESET}")
+        try: s.close()
+        except Exception: pass
+        print(f"\n{RED}❌ Connection error during transfer: {e}{RESET}")
         explain_tv_error(str(e))
         return False
-
-    s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
-    recv_pkt(s)
-
-    service = b"sync:\x00"
-    s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
-    cmd, r_id, l_id, p = recv_pkt(s)
-
-    dest = remote_wgt.encode() + b",33279"
-    send_pld = struct.pack("<4sI", b"SEND", len(dest)) + dest
-    s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(send_pld), sum(send_pld)&0xffffffff, 0x45545257^0xffffffff) + send_pld)
-    recv_pkt(s)
-
-    file_size = os.path.getsize(wgt_path)
-    bytes_sent = 0
-    start_time = time.time()
-
-    with open(wgt_path, "rb") as f:
-        while True:
-            blk = b""
-            while len(blk) < 32768:
-                chunk = f.read(4000)
-                if not chunk: break
-                blk += struct.pack("<4sI", b"DATA", len(chunk)) + chunk
-            if not blk: break
-            s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(blk), sum(blk)&0xffffffff, 0x45545257^0xffffffff) + blk)
-            bytes_sent += len(blk)
-            elapsed = time.time() - start_time
-            speed = (bytes_sent / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
-            pct = int((bytes_sent / file_size) * 100)
-            bar = ("█" * (pct // 5)).ljust(20, "░")
-            print(f"Uploading: [{bar}] {pct}% ({speed:.1f} MB/s)", end="\r")
-            cmd, a0, a1, p = recv_pkt(s)
-            if cmd == b"WRTE":
-                s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
-
-    done_pld = struct.pack("<4sI", b"DONE", int(os.path.getmtime(wgt_path)))
-    s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(done_pld), sum(done_pld)&0xffffffff, 0x45545257^0xffffffff) + done_pld)
-    recv_pkt(s)
-    s.close()
-    print(f"\n{GREEN}✔ File transfer complete.{RESET}")
 
     pkg_type = "tpk" if wgt_path.lower().endswith(".tpk") else "wgt"
     print(f"Installing {pkg_type.upper()} on TV...")
