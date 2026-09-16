@@ -12,21 +12,20 @@ SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )"
 
 # 0. Check for Updates from GitHub
 if [ -d "$SCRIPT_DIR/.git" ]; then
-    (
-        cd "$SCRIPT_DIR"
-        git fetch origin main >/dev/null 2>&1 || true
-        LOCAL_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
-        REMOTE_HASH=$(git rev-parse origin/main 2>/dev/null || echo "")
-        if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
-            CUR_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "2.1.0")
-            REMOTE_VER=$(git show origin/main:install.py 2>/dev/null | grep "^SCRIPT_VERSION =" | cut -d'"' -f2 || echo "latest")
-            echo "⚡ Update available: v$CUR_VER ➜ v$REMOTE_VER! Updating..."
-            git pull origin main >/dev/null 2>&1 || true
-            NEW_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "$REMOTE_VER")
-            echo "✔ Updated successfully to v$NEW_VER!"
-            sleep 1
-        fi
-    )
+    git -C "$SCRIPT_DIR" fetch origin main >/dev/null 2>&1 || true
+    LOCAL_HASH=$(git -C "$SCRIPT_DIR" rev-parse HEAD 2>/dev/null || echo "")
+    REMOTE_HASH=$(git -C "$SCRIPT_DIR" rev-parse origin/main 2>/dev/null || echo "")
+    if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
+        CUR_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "2.1.0")
+        REMOTE_VER=$(git -C "$SCRIPT_DIR" show origin/main:install.py 2>/dev/null | grep "^SCRIPT_VERSION =" | cut -d'"' -f2 || echo "latest")
+        echo "⚡ Update available: v$CUR_VER ➜ v$REMOTE_VER! Updating..."
+        git -C "$SCRIPT_DIR" pull origin main >/dev/null 2>&1 || true
+        NEW_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "$REMOTE_VER")
+        echo "✔ Updated successfully to v$NEW_VER!"
+        echo "🔄 Auto-restarting script..."
+        sleep 1
+        exec "$SCRIPT_DIR/setup.sh" "$@"
+    fi
 fi
 
 # 1. Clean check & install missing tools

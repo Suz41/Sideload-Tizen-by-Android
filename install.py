@@ -835,11 +835,13 @@ def main():
             except Exception:
                 pass
             if new_ver != SCRIPT_VERSION:
-                print(f"\n{GREEN}✔ Successfully updated from v{SCRIPT_VERSION} ➜ v{new_ver}!{RESET}")
+                print(f"\n{GREEN}✔ Successfully updated: v{SCRIPT_VERSION} ➜ v{new_ver}!{RESET}")
+                print(f"{CYAN}🔄 Auto-restarting into v{new_ver}...{RESET}\n")
+                time.sleep(1.2)
+                os.execv(sys.executable, [sys.executable] + sys.argv)
             else:
                 print(f"\n{GREEN}✔ Already running latest version: v{SCRIPT_VERSION}{RESET}")
-            input("\nPress Enter to reload...")
-            os.execv(sys.executable, [sys.executable] + sys.argv)
+                time.sleep(1.2)
         elif choice == "r":
             continue
         elif choice == "6":
