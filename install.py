@@ -153,9 +153,36 @@ def explain_tv_error(err_str, context="install"):
 
     print(f"{YELLOW}════════════════════════════════════════════════════════════════════════{RESET}\n")
 
+def get_local_wifi_ip():
+    """Detect phone Wi-Fi or local network IPv4 address."""
+    try:
+        import subprocess
+        out = subprocess.check_output(['/system/bin/ip', '-4', 'addr', 'show'], stderr=subprocess.DEVNULL).decode()
+        cur = None
+        for l in out.splitlines():
+            s_l = l.strip()
+            if ': ' in s_l and ('wlan' in s_l or 'ap' in s_l): cur = s_l
+            elif s_l.startswith('inet ') and cur:
+                return s_l.split()[1].split('/')[0]
+            elif ': ' in s_l: cur = None
+    except Exception:
+        pass
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        res = s.getsockname()[0]
+        s.close()
+        if not res.startswith('127.'):
+            return res
+    except Exception:
+        pass
+    return "Unknown"
+
 def scan_network_for_tv(phone_ip=None):
     """Scan local subnet on port 26101 to auto-detect Samsung TV."""
-    print(f"\n{CYAN}🔍 Scanning local Wi-Fi network for Samsung TV (port 26101)...{RESET}")
+    if not phone_ip or phone_ip == "Unknown":
+        phone_ip = get_local_wifi_ip()
+
     base = None
     if phone_ip and "." in phone_ip and not phone_ip.startswith("127."):
         parts = phone_ip.split(".")
@@ -165,8 +192,10 @@ def scan_network_for_tv(phone_ip=None):
         if saved and "." in saved:
             base = ".".join(saved.split(".")[:3])
 
-    if not base:
+    if not base or base.startswith("192.0."):
         base = "192.168.1"
+
+    print(f"\n{CYAN}🔍 Scanning Wi-Fi subnet {base}.0/24 for Samsung TV (port 26101)...{RESET}")
 
     found_ips = []
     import concurrent.futures
@@ -623,28 +652,26 @@ def main():
 
     # Interactive TUI Mode
     tv_ip = get_saved_tv_ip()
+    phone_ip = get_local_wifi_ip()
 
-    if not tv_ip:
-        print(f"\n{BOLD}=== First-Time Setup: Connect to your Samsung TV ==={RESET}")
-        print("No saved TV IP address found.")
-        print(" [1] 🔍 Auto-Scan Wi-Fi Network for Samsung TV (Recommended)")
-        print(" [2] ✍️  Type TV IP Address Manually")
-        init_choice = input("\nSelect [1-2]: ").strip()
-        if init_choice == "2":
-            tv_ip = input("Enter your Samsung TV IP Address: ").strip()
-        else:
-            tv_ip = scan_network_for_tv()
-            if not tv_ip:
-                tv_ip = input("\nAuto-scan did not detect TV. Enter TV IP manually: ").strip()
-
-        if tv_ip:
+    if not tv_ip or not check_tv_online(tv_ip):
+        print(f"\n{CYAN}🔍 Auto-detecting Samsung TV on Wi-Fi network...{RESET}")
+        detected = scan_network_for_tv(phone_ip)
+        if detected:
+            tv_ip = detected
             save_tv_ip(tv_ip)
-            print(f"{GREEN}✔ Saved TV IP: {tv_ip}{RESET}")
-        else:
-            tv_ip = "192.168.1.100"
-
+            print(f"{GREEN}✔ Found and saved Samsung TV at: {tv_ip}{RESET}")
+        elif not tv_ip:
+            print(f"\n{BOLD}=== First-Time Setup: Connect to your Samsung TV ==={RESET}")
+            print(f"Phone Wi-Fi IP : {GREEN}{BOLD}{phone_ip}{RESET}")
+            print(f"👉 In TV Developer Mode, enter Host IP: {GREEN}{BOLD}{phone_ip}{RESET}")
+            tv_ip = input("\nEnter TV IP Address manually (or press Enter to scan again): ").strip()
+            if not tv_ip:
+                tv_ip = scan_network_for_tv(phone_ip) or "192.168.1.100"
+            save_tv_ip(tv_ip)
 
     while True:
+        phone_ip = get_local_wifi_ip()
         is_online = check_tv_online(tv_ip)
         status_str = f"{GREEN}● ONLINE{RESET}" if is_online else f"{RED}✖ OFFLINE{RESET}"
 
@@ -655,20 +682,28 @@ def main():
 
         update_status = get_git_update_status()
 
-        print("\n" + "=" * 60)
-        print(f"{BOLD}    📺  Tizen Sideload Manager v{SCRIPT_VERSION} (Termux TUI)     {RESET}")
-        print("=" * 60)
-        print(f" Version  : v{SCRIPT_VERSION} [{update_status}]")
-        print(f" Status   : [{status_str}]")
-        print(f" TV IP    : {CYAN}{tv_ip}:26101{RESET}")
+        print("\n" + "=" * 62)
+        print(f"{BOLD}       📺  Tizen Sideload Manager v{SCRIPT_VERSION} (Termux TUI)       {RESET}")
+        print("=" * 62)
+        print(f" Version   : v{SCRIPT_VERSION} [{update_status}]")
+        print(f" Status    : [{status_str}]")
+        print(f" TV IP     : {CYAN}{tv_ip}:26101{RESET}")
+        print(f" Phone IP  : {GREEN}{BOLD}{phone_ip}{RESET}")
+        print("-" * 62)
+        print(f"{YELLOW} ⚙️  SAMSUNG TV DEVELOPER MODE INPUT:{RESET}")
+        print(f"    1. TV Remote: Open Apps -> Press: {BOLD}1 2 3 4 5{RESET}")
+        print(f"    2. Developer Mode  -> {GREEN}{BOLD}[ ON ]{RESET}")
+        print(f"    3. Host PC IP box  -> Enter: {GREEN}{BOLD}{phone_ip}{RESET}")
+        print(f"    4. Hold TV Remote Power button 5s to reboot TV")
         if is_online:
-            print(f" Model    : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})")
+            print("-" * 62)
+            print(f" Model     : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})")
             storage_info = tv_details.get("storage")
             if storage_info:
-                print(f" Storage  : {GREEN}{storage_info}{RESET}")
+                print(f" Storage   : {GREEN}{storage_info}{RESET}")
             if duid:
-                print(f" DUID     : {CYAN}{duid}{RESET}")
-        print("-" * 60)
+                print(f" DUID      : {CYAN}{duid}{RESET}")
+        print("-" * 62)
         print(" [1] 🚀 Sideload a Local .wgt file")
         print(" [2] 📥 Download & Sideload Pre-signed Apps (TizenBrew/Jellyfin/VLC)")
         print(" [3] ⚙️  Change TV IP Address")

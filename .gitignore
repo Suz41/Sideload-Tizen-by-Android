@@ -1,3 +1,5 @@
 *.wgt
+*.tpk
 __pycache__/
 .tizen_tv_ip
+

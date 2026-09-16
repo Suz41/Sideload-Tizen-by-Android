@@ -54,7 +54,29 @@ if [ ! -f "$HOME/.android/adbkey" ]; then
 fi
 
 # 4. Detect Phone IP
-PHONE_IP=$(python3 -c "import socket; s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM); s.connect(('8.8.8.8',80)); print(s.getsockname()[0]); s.close()" 2>/dev/null || echo "Unknown")
+PHONE_IP=$(python3 -c "
+import subprocess, socket
+def get_ip():
+    try:
+        out = subprocess.check_output(['/system/bin/ip', '-4', 'addr', 'show'], stderr=subprocess.DEVNULL).decode()
+        cur = None
+        for l in out.splitlines():
+            s = l.strip()
+            if ': ' in s and ('wlan' in s or 'ap' in s): cur = s
+            elif s.startswith('inet ') and cur: return s.split()[1].split('/')[0]
+            elif ': ' in s: cur = None
+    except Exception: pass
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        res = s.getsockname()[0]
+        s.close()
+        return res
+    except Exception: return 'Unknown'
+print(get_ip())
+" 2>/dev/null || echo "Unknown")
+
+SAVED_TV_IP=$(cat "$HOME/.tizen_tv_ip" 2>/dev/null || echo "")
 
 clear
 echo "========================================================"
@@ -64,16 +86,18 @@ echo ""
 echo " Put your .wgt / .tpk files in File Manager at:"
 echo "    Internal Storage -> Download -> Samsung-T-Sideload"
 echo ""
-echo " YOUR PHONE IP : $PHONE_IP"
-echo ""
-echo " 1. ON YOUR SAMSUNG TV:"
-echo "    • Apps -> Press 1 2 3 4 5 on remote"
-echo "    • Turn Developer Mode -> ON"
-echo "    • Host IP -> Enter: $PHONE_IP"
-echo "    • Hold TV Power button 5s to restart TV"
-echo ""
-echo " 2. FIND TV IP ON TV:"
-echo "    • Settings -> General -> Network -> Network Status"
+echo "┌───────────────────────────────────────────────────────┐"
+echo "│  👉 WHAT TO INPUT IN SAMSUNG TV DEVELOPER MODE:       │"
+echo "├───────────────────────────────────────────────────────┤"
+echo "│  1. Open 'Apps' -> Press 1 2 3 4 5 on TV remote       │"
+echo "│  2. Turn Developer Mode -> [ ON ]                     │"
+echo "│  3. In 'Host PC IP' box, enter:                       │"
+echo "│     👉  $PHONE_IP"
+echo "│  4. Hold TV Remote Power button 5s to reboot TV       │"
+echo "└───────────────────────────────────────────────────────┘"
+if [ -n "$SAVED_TV_IP" ]; then
+echo " Detected Samsung TV IP : $SAVED_TV_IP:26101"
+fi
 echo "========================================================"
 echo ""
 
