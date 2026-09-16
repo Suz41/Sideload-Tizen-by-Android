@@ -91,21 +91,30 @@ def menu_browse_all_upstream(tv_ip):
 SCRIPT_VERSION = "2.1.0"
 
 def get_git_update_status():
-    """Check if local git repo is up-to-date with remote."""
+    """Check if local git repo is up-to-date with remote and display version numbers."""
     try:
         import subprocess
-        # Check without blocking for long
         subprocess.run(["git", "fetch", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=2)
         local_hash = subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, timeout=1).decode().strip()
         remote_hash = subprocess.check_output(["git", "rev-parse", "origin/main"], stderr=subprocess.DEVNULL, timeout=1).decode().strip()
         if local_hash and remote_hash:
             if local_hash == remote_hash:
-                return f"{GREEN}Up-to-date ✔{RESET}"
+                return f"{GREEN}v{SCRIPT_VERSION} (Latest) ✔{RESET}"
             else:
-                return f"{YELLOW}Update Available ⚡ (Press 'u' to update){RESET}"
+                remote_ver = None
+                try:
+                    out = subprocess.check_output(["git", "show", "origin/main:install.py"], stderr=subprocess.DEVNULL, timeout=1).decode()
+                    for l in out.splitlines():
+                        if l.startswith("SCRIPT_VERSION ="):
+                            remote_ver = l.split("=")[1].strip().strip('"').strip("'")
+                            break
+                except Exception:
+                    pass
+                ver_info = f"v{SCRIPT_VERSION} ➜ v{remote_ver}" if remote_ver else f"New version available"
+                return f"{YELLOW}Update Available: {ver_info} ⚡ (Press 'u' to update){RESET}"
     except Exception:
         pass
-    return f"{GREEN}Latest ✔{RESET}"
+    return f"{GREEN}v{SCRIPT_VERSION} ✔{RESET}"
 
 
 
@@ -800,11 +809,37 @@ def main():
             menu_uninstall_app(tv_ip)
         elif choice == "u":
             print(f"\n{CYAN}Checking for updates from GitHub...{RESET}")
+            print(f"Current version : {BOLD}v{SCRIPT_VERSION}{RESET}")
             import subprocess
+            subprocess.run(["git", "fetch", "origin", "main"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
+            remote_ver = None
+            try:
+                out = subprocess.check_output(["git", "show", "origin/main:install.py"], stderr=subprocess.DEVNULL, timeout=2).decode()
+                for l in out.splitlines():
+                    if l.startswith("SCRIPT_VERSION ="):
+                        remote_ver = l.split("=")[1].strip().strip('"').strip("'")
+                        break
+            except Exception:
+                pass
+            if remote_ver:
+                print(f"Remote version  : {BOLD}v{remote_ver}{RESET}")
             res = subprocess.run(["git", "pull", "origin", "main"], capture_output=True, text=True)
             print(res.stdout if res.stdout else res.stderr)
+            new_ver = SCRIPT_VERSION
+            try:
+                with open(__file__, "r") as f:
+                    for line in f:
+                        if line.startswith("SCRIPT_VERSION ="):
+                            new_ver = line.split("=")[1].strip().strip('"').strip("'")
+                            break
+            except Exception:
+                pass
+            if new_ver != SCRIPT_VERSION:
+                print(f"\n{GREEN}✔ Successfully updated from v{SCRIPT_VERSION} ➜ v{new_ver}!{RESET}")
+            else:
+                print(f"\n{GREEN}✔ Already running latest version: v{SCRIPT_VERSION}{RESET}")
             input("\nPress Enter to reload...")
-            continue
+            os.execv(sys.executable, [sys.executable] + sys.argv)
         elif choice == "r":
             continue
         elif choice == "6":

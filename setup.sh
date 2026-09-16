@@ -18,9 +18,12 @@ if [ -d "$SCRIPT_DIR/.git" ]; then
         LOCAL_HASH=$(git rev-parse HEAD 2>/dev/null || echo "")
         REMOTE_HASH=$(git rev-parse origin/main 2>/dev/null || echo "")
         if [ -n "$LOCAL_HASH" ] && [ -n "$REMOTE_HASH" ] && [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
-            echo "Update available! Updating to latest version..."
+            CUR_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "2.1.0")
+            REMOTE_VER=$(git show origin/main:install.py 2>/dev/null | grep "^SCRIPT_VERSION =" | cut -d'"' -f2 || echo "latest")
+            echo "⚡ Update available: v$CUR_VER ➜ v$REMOTE_VER! Updating..."
             git pull origin main >/dev/null 2>&1 || true
-            echo "Updated successfully!"
+            NEW_VER=$(grep "^SCRIPT_VERSION =" "$SCRIPT_DIR/install.py" 2>/dev/null | cut -d'"' -f2 || echo "$REMOTE_VER")
+            echo "✔ Updated successfully to v$NEW_VER!"
             sleep 1
         fi
     )
