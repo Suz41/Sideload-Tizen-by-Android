@@ -1,4 +1,62 @@
 
+#!/usr/bin/env python3
+import os
+import sys
+import time
+import socket
+import struct
+import zipfile
+import threading
+import urllib.request
+import xml.etree.ElementTree as ET
+
+# ANSI Color Codes for Clean Terminal Output
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+CYAN = "\033[96m"
+BOLD = "\033[1m"
+RESET = "\033[0m"
+
+def download_file_with_progress(url, dest_path, desc=None):
+    """Download a file with an animated ANSI progress bar, speed, and size counter."""
+    if not desc:
+        desc = os.path.basename(dest_path)
+    print(f"\n{CYAN}📥 Downloading: {BOLD}{desc}{RESET}")
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp, open(dest_path, "wb") as out_f:
+            total_header = resp.headers.get("Content-Length")
+            total_size = int(total_header) if total_header and total_header.isdigit() else 0
+            downloaded = 0
+            start_time = time.time()
+            chunk_size = 65536
+            while True:
+                chunk = resp.read(chunk_size)
+                if not chunk:
+                    break
+                out_f.write(chunk)
+                downloaded += len(chunk)
+                elapsed = time.time() - start_time
+                speed = (downloaded / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
+                if total_size > 0:
+                    pct = min(100, int((downloaded / total_size) * 100))
+                    bar = ("█" * (pct // 5)).ljust(20, "░")
+                    mb_cur = downloaded / (1024 * 1024)
+                    mb_tot = total_size / (1024 * 1024)
+                    print(f"\r {CYAN}Progress: [{bar}] {pct}%{RESET} | {mb_cur:.1f}/{mb_tot:.1f} MB | {speed:.1f} MB/s", end="", flush=True)
+                else:
+                    mb_cur = downloaded / (1024 * 1024)
+                    print(f"\r {CYAN}Downloaded: {mb_cur:.1f} MB | {speed:.1f} MB/s{RESET}", end="", flush=True)
+            print(f"\n{GREEN}✔ Download complete!{RESET}\n")
+            return True
+    except Exception as e:
+        if os.path.exists(dest_path):
+            try: os.remove(dest_path)
+            except Exception: pass
+        print(f"\n{RED}❌ Download failed: {e}{RESET}")
+        return False
+
 def menu_browse_all_upstream(tv_ip):
     """Dynamically fetch and list all 50+ community apps from Apps2Samsung repo."""
     print(f"\n{CYAN}🌐 Fetching complete live community repository catalog...{RESET}")
@@ -24,18 +82,13 @@ def menu_browse_all_upstream(tv_ip):
         target_name = assets[int(choice)-1]
         dl_url = f"https://github.com/Apps2Samsung/tizen-community-packages/releases/download/community-611/{target_name}"
         if not os.path.exists(target_name):
-            print(f"Downloading {target_name}...")
-            try:
-                urllib.request.urlretrieve(dl_url, target_name)
-                print(f"{GREEN}✔ Download complete!{RESET}")
-            except Exception as e:
-                print(f"{RED}Download failed: {e}{RESET}")
+            if not download_file_with_progress(dl_url, target_name, target_name):
                 input("\nPress Enter to return...")
                 return
         stream_and_install_wgt(tv_ip, target_name)
     input("\nPress Enter to continue...")
 
-SCRIPT_VERSION = "2.0.0"
+SCRIPT_VERSION = "2.1.0"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote."""
@@ -225,26 +278,7 @@ def scan_network_for_tv(phone_ip=None):
         return found_ips[0]
     print(f"{YELLOW}No TV found on subnet {base}.0/24 (Make sure TV Developer Mode is ON){RESET}")
     return None
-
-#!/usr/bin/env python3
-import socket
-import struct
-import os
-import sys
-import time
-import zipfile
-import urllib.request
-import xml.etree.ElementTree as ET
-
 CONFIG_FILE = os.path.expanduser("~/.tizen_tv_ip")
-
-# ANSI Color Codes for Clean Terminal Output
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-CYAN = "\033[96m"
-BOLD = "\033[1m"
-RESET = "\033[0m"
 
 COMMUNITY_APPS = {
     "1": {"name": "TizenBrew (Homebrew App Store)", "file": "TizenBrew.wgt", "ver": "v2.0.5", "cat": "Framework", "min_tizen": "4.0"},
@@ -445,9 +479,11 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
                 bytes_sent += len(blk)
                 elapsed = time.time() - start_time
                 speed = (bytes_sent / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
-                pct = int((bytes_sent / file_size) * 100)
+                pct = min(100, int((bytes_sent / file_size) * 100))
                 bar = ("█" * (pct // 5)).ljust(20, "░")
-                print(f"Uploading: [{bar}] {pct}% ({speed:.1f} MB/s)", end="\r")
+                mb_cur = bytes_sent / (1024 * 1024)
+                mb_tot = file_size / (1024 * 1024)
+                print(f"\r {CYAN}📤 Sending to TV: [{bar}] {pct}%{RESET} | {mb_cur:.1f}/{mb_tot:.1f} MB | {speed:.1f} MB/s", end="", flush=True)
                 cmd, a0, a1, p = recv_pkt(s)
                 if cmd == b"WRTE":
                     s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
@@ -465,14 +501,39 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         return False
 
     pkg_type = "tpk" if wgt_path.lower().endswith(".tpk") else "wgt"
-    print(f"Installing {pkg_type.upper()} on TV...")
-    r1 = run_tv_shell(tv_ip, f"0 vd_appinstall {final_app_id} {remote_wgt}")
-    r2 = run_tv_shell(tv_ip, f"0 pkgcmd -i -t {pkg_type} -p {remote_wgt}")
+    print(f"\n{CYAN}⚙️  Installing {pkg_type.upper()} package on Samsung TV...{RESET}")
 
+    install_res = {"r1": "", "r2": ""}
+    def install_worker():
+        install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_app_id} {remote_wgt}")
+        install_res["r2"] = run_tv_shell(tv_ip, f"0 pkgcmd -i -t {pkg_type} -p {remote_wgt}")
+
+    th = threading.Thread(target=install_worker)
+    th.daemon = True
+    th.start()
+
+    spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    step = 0
+    t0 = time.time()
+    while th.is_alive():
+        spin = spinner[step % len(spinner)]
+        elapsed = time.time() - t0
+        prog = min(95, int(elapsed * 10) + 5)
+        bar = ("█" * (prog // 5)).ljust(20, "░")
+        print(f"\r {YELLOW}{spin} Installing on TV: [{bar}] {prog}% ({elapsed:.1f}s){RESET}", end="", flush=True)
+        time.sleep(0.1)
+        step += 1
+    th.join()
+
+    total_time = time.time() - t0
+    bar_full = "█" * 20
+    print(f"\r {GREEN}✔ Installing on TV: [{bar_full}] 100% ({total_time:.1f}s){RESET}\n")
+
+    r1, r2 = install_res["r1"], install_res["r2"]
     if r1: print(f"TV Log (vd_appinstall): {r1}")
     if r2: print(f"TV Log (pkgcmd): {r2}")
 
-    print("Launching app on TV...")
+    print(f"\n{CYAN}🚀 Launching app on TV...{RESET}")
     r3 = run_tv_shell(tv_ip, f"0 app_launcher -s {final_app_id}")
     if r3: print(f"TV Log (app_launcher): {r3}")
 
@@ -558,12 +619,7 @@ def menu_download_app(tv_ip):
         download_url = app.get("url", base_url + wgt_file)
 
         if not os.path.exists(wgt_file):
-            print(f"Downloading {app['name']}...")
-            try:
-                urllib.request.urlretrieve(download_url, wgt_file)
-                print(f"{GREEN}✔ Download complete!{RESET}")
-            except Exception as e:
-                print(f"{RED}Download failed: {e}{RESET}")
+            if not download_file_with_progress(download_url, wgt_file, app["name"]):
                 input("\nPress Enter to return...")
                 return
         stream_and_install_wgt(tv_ip, wgt_file, app.get("app_id"))
