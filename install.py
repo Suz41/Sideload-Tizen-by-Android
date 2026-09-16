@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import re
 import socket
 import struct
 import zipfile
@@ -10,13 +11,20 @@ import threading
 import urllib.request
 import xml.etree.ElementTree as ET
 
-# ANSI Color Codes for Clean Terminal Output
+# ANSI Color & Style Codes for Clean Terminal Output
 GREEN = "\033[92m"
 RED = "\033[91m"
 YELLOW = "\033[93m"
 CYAN = "\033[96m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
 BOLD = "\033[1m"
+DIM = "\033[2m"
 RESET = "\033[0m"
+
+def clear_screen():
+    """Clear terminal screen cleanly."""
+    os.system("clear" if os.name != "nt" else "cls")
 
 def download_file_with_progress(url, dest_path, desc=None):
     """Download a file with an animated ANSI progress bar, speed, and size counter."""
@@ -72,21 +80,23 @@ def menu_browse_all_upstream(tv_ip):
         input("\nPress Enter to return...")
         return
 
-    print(f"\n{BOLD}=== Full Community Package Archive ({len(assets)} Apps) ==={RESET}")
+    print(f"\n{BOLD}🌐 Full Community Package Archive ({len(assets)} Apps){RESET}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
     for idx, name in enumerate(assets, 1):
         ext = "TPK" if name.endswith(".tpk") else "WGT"
-        print(f" [{str(idx).rjust(2)}] {name.ljust(42)} [{CYAN}{ext}{RESET}]")
+        print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{name.ljust(44)}{RESET} [{CYAN}{ext}{RESET}]")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
 
-    choice = input(f"\nSelect package [1-{len(assets)}] or 0 to cancel: ").strip()
+    choice = input(f"\n{BOLD}❯ Select package [1-{len(assets)}] or 0 to cancel: {RESET}").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(assets):
         target_name = assets[int(choice)-1]
         dl_url = f"https://github.com/Apps2Samsung/tizen-community-packages/releases/download/community-611/{target_name}"
         if not os.path.exists(target_name):
             if not download_file_with_progress(dl_url, target_name, target_name):
-                input("\nPress Enter to return...")
+                input(f"\n{DIM}Press Enter to return...{RESET}")
                 return
         stream_and_install_wgt(tv_ip, target_name)
-    input("\nPress Enter to continue...")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 SCRIPT_VERSION = "2.1.0"
 
@@ -555,8 +565,13 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         return True
 
 def menu_sideload_local(tv_ip):
-    # Scan both current directory and Android phone Downloads folder
-    search_dirs = ["/storage/emulated/0/Download/Samsung-T-Sideload", "/sdcard/Download/Samsung-T-Sideload", ".", "/sdcard/Download", os.path.expanduser("~/storage/downloads")]
+    search_dirs = [
+        "/storage/emulated/0/Download/Samsung-T-Sideload",
+        "/sdcard/Download/Samsung-T-Sideload",
+        ".",
+        "/sdcard/Download",
+        os.path.expanduser("~/storage/downloads")
+    ]
     found_files = []
 
     for d in search_dirs:
@@ -571,23 +586,32 @@ def menu_sideload_local(tv_ip):
                 pass
 
     if not found_files:
-        print(f"\n{YELLOW}No .wgt or .tpk files found!{RESET}")
-        print("Tip: Download any .wgt file in your browser, it will appear here automatically.")
-        input("\nPress Enter to return to menu...")
+        print(f"\n{YELLOW}📂 No .wgt or .tpk package files found!{RESET}")
+        print(f"{CYAN}Tip:{RESET} Place packages in: {BOLD}Internal Storage ➜ Download ➜ Samsung-T-Sideload{RESET}")
+        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
         return
 
-    print(f"\n{BOLD}Found packages on phone:{RESET}")
+    print(f"\n{BOLD}📦 Local Packages Found on Phone ({len(found_files)}):{RESET}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
     for idx, (full_path, fname, origin) in enumerate(found_files, 1):
         _, signed = get_wgt_metadata(full_path)
-        status = f"{GREEN}Signed ✔{RESET}" if signed else f"{RED}Unsigned ✖{RESET}"
-        loc_str = "Samsung-T-Sideload" if "Samsung-T-Sideload" in origin else ("Downloads" if "Download" in origin else "Current folder")
-        print(f" [{idx.rjust(2)}] {fname} ({status}) [{loc_str}]")
+        status = f"{GREEN}Signed ✔{RESET}" if signed else f"{YELLOW}Unsigned ⚠️{RESET}"
+        ext = "TPK" if fname.endswith(".tpk") else "WGT"
+        try:
+            sz_mb = os.path.getsize(full_path) / (1024 * 1024)
+            size_str = f"{sz_mb:.1f} MB"
+        except Exception:
+            size_str = ""
+        loc_str = "Samsung-T-Sideload" if "Samsung-T-Sideload" in origin else ("Downloads" if "Download" in origin else "Local folder")
+        print(f" {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{fname}{RESET}")
+        print(f"      Format: [{CYAN}{ext}{RESET}]  Size: {size_str}  Status: {status}  ({DIM}{loc_str}{RESET})")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
 
-    choice = input(f"\nSelect file [1-{len(found_files)}] or 0 to cancel: ").strip()
+    choice = input(f"\n{BOLD}❯ Select package [1-{len(found_files)}] or 0 to cancel: {RESET}").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(found_files):
         target_path = found_files[int(choice)-1][0]
         stream_and_install_wgt(tv_ip, target_path)
-    input("\nPress Enter to continue...")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def menu_download_app(tv_ip):
     tv_info = get_tv_details(tv_ip)
@@ -598,19 +622,21 @@ def menu_download_app(tv_ip):
     except Exception:
         tv_ver = 6.0
 
-    print(f"\n{BOLD}=== Pre-signed Community App Store ==={RESET}")
-    print(f" Connected TV OS: {CYAN}Tizen {tv_ver_str}{RESET}")
+    print(f"\n{BOLD}🛍️  Pre-Signed Community App Store{RESET}  {DIM}(TV OS: Tizen {tv_ver_str}){RESET}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
     categories = ["Framework", "Streaming", "Media", "Gaming", "Utilities"]
     for cat in categories:
-        print(f"\n{CYAN}--- {cat} ---{RESET}")
+        print(f"\n{BOLD}{CYAN}◆ {cat.upper()}{RESET}")
         for k, v in COMMUNITY_APPS.items():
             if v.get("cat") == cat:
                 min_req = float(v.get("min_tizen", "4.0"))
-                compat_tag = f"{GREEN}[Compatible ✔]{RESET}" if tv_ver >= min_req else f"{RED}[Incompatible ✖ (Needs Tizen {min_req}+)]{RESET}"
-                print(f" [{k.rjust(2)}] {v['name'].ljust(34)} {CYAN}{v.get('ver', '').ljust(8)}{RESET} {compat_tag}")
+                compat_tag = f"{GREEN}Compatible ✔{RESET}" if tv_ver >= min_req else f"{RED}Needs Tizen {min_req}+{RESET}"
+                ext = "TPK" if v.get("file", "").endswith(".tpk") else "WGT"
+                print(f"  {CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(33)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
 
-    print(f"\n [15] {YELLOW}🌐 Browse All Community Apps (50+ Packages Archive)...{RESET}")
-    choice = input(f"\nSelect app [1-15] or 0 to cancel: ").strip()
+    print(f"\n  {YELLOW}[15] 🌐 Browse Full Archive (50+ Community Packages)...{RESET}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
+    choice = input(f"\n{BOLD}❯ Select app [1-15] or 0 to cancel: {RESET}").strip()
     if choice == "15":
         menu_browse_all_upstream(tv_ip)
         return
@@ -619,7 +645,7 @@ def menu_download_app(tv_ip):
         min_req = float(app.get("min_tizen", "4.0"))
         if tv_ver < min_req:
             print(f"\n{YELLOW}⚠️  Warning: This app requires Tizen {min_req}+, but your TV is Tizen {tv_ver_str}.{RESET}")
-            c_anyway = input("Do you still want to attempt install? [y/N]: ").strip().lower()
+            c_anyway = input(f"{BOLD}Attempt install anyway? [y/N]: {RESET}").strip().lower()
             if c_anyway != "y":
                 return
 
@@ -629,39 +655,39 @@ def menu_download_app(tv_ip):
 
         if not os.path.exists(wgt_file):
             if not download_file_with_progress(download_url, wgt_file, app["name"]):
-                input("\nPress Enter to return...")
+                input(f"\n{DIM}Press Enter to return...{RESET}")
                 return
         stream_and_install_wgt(tv_ip, wgt_file, app.get("app_id"))
-    input("\nPress Enter to continue...")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def menu_list_installed_apps(tv_ip):
-    print(f"\n{CYAN}Querying installed apps from TV...{RESET}")
+    print(f"\n{CYAN}🔍 Querying installed apps from Samsung TV...{RESET}")
     res = run_tv_shell(tv_ip, "0 app_launcher --list || 0 pkgcmd -l")
     if not res or "failed" in res.lower() or "connection failed" in res.lower():
-        print(f"{RED}Could not retrieve app list from TV ({res}){RESET}")
+        print(f"\n{RED}❌ Could not retrieve app list from TV ({res}){RESET}")
     else:
-        print(f"\n{BOLD}Installed Apps on TV:{RESET}")
-        print("-" * 50)
         lines = [l.strip() for l in res.splitlines() if l.strip()]
+        print(f"\n{BOLD}📋 Installed Apps on TV ({len(lines)}):{RESET}")
+        print(f"{DIM}" + "─" * 64 + f"{RESET}")
         for idx, line in enumerate(lines, 1):
-            print(f" [{str(idx).rjust(2)}] {line}")
-        print("-" * 50)
-    input("\nPress Enter to continue...")
+            print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{line}{RESET}")
+        print(f"{DIM}" + "─" * 64 + f"{RESET}")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 
 def menu_uninstall_app(tv_ip):
-    print(f"\n{CYAN}Querying installed packages & usage activity from TV...{RESET}")
+    print(f"\n{CYAN}🔍 Querying installed packages & usage activity from Samsung TV...{RESET}")
     # Query app list and access timestamps of app data directories
     res = run_tv_shell(tv_ip, "0 app_launcher --list || 0 pkgcmd -l")
     time_res = run_tv_shell(tv_ip, "0 ls -lut /opt/usr/apps /home/owner/apps_data 2>/dev/null || true")
 
     if not res or "failed" in res.lower():
-        app_id = input("\\nEnter App ID to uninstall: ").strip()
+        app_id = input(f"\n{BOLD}Enter App ID to uninstall: {RESET}").strip()
         if app_id:
-            print(f"Uninstalling {app_id}...")
+            print(f"{YELLOW}🗑️  Uninstalling {app_id}...{RESET}")
             r = run_tv_shell(tv_ip, f"0 pkgcmd -u -t wgt -q {app_id}; 0 pkgcmd -u -t tpk -q {app_id}")
-            print(f"TV Response: {r}")
-        input("\\nPress Enter to continue...")
+            print(f"{GREEN}TV Response: {r}{RESET}")
+        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
         return
 
     raw_lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
@@ -672,12 +698,11 @@ def menu_uninstall_app(tv_ip):
             apps.append(app_clean)
 
     if not apps:
-        print(f"{YELLOW}No apps found on TV.{RESET}")
-        input("\\nPress Enter to continue...")
+        print(f"\n{YELLOW}No apps found on TV.{RESET}")
+        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
         return
 
     # Parse usage order (least recently used first)
-    # ls -lut lists by access time; we reverse or sort so oldest accessed are at the top
     recent_order = []
     for line in time_res.splitlines():
         parts = line.split()
@@ -687,25 +712,24 @@ def menu_uninstall_app(tv_ip):
                 if (fname in a or a in fname) and a not in recent_order:
                     recent_order.append(a)
 
-    # Apps not recently opened go to the very top (least used), then sorted by oldest access
     least_used_first = [a for a in apps if a not in recent_order] + list(reversed(recent_order))
 
-    print(f"\n{BOLD}Select app to uninstall (Sorted: Least Used ➔ Frequently Used):{RESET}")
-    print("-" * 65)
+    print(f"\n{BOLD}🗑️  Uninstall App from TV{RESET}  {DIM}(Sorted: Least Used ➜ Frequently Used){RESET}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
     for idx, a in enumerate(least_used_first, 1):
         tag = f"{YELLOW}[Least Used]{RESET}" if idx <= max(1, len(least_used_first)//3) else f"{CYAN}[Active]{RESET}"
-        print(f" [{str(idx).rjust(2)}] {a.ljust(38)} {tag}")
-    print("-" * 65)
+        print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{a.ljust(38)}{RESET} {tag}")
+    print(f"{DIM}" + "─" * 64 + f"{RESET}")
 
-    choice = input(f"\\nEnter number [1-{len(least_used_first)}] or 0 to cancel: ").strip()
+    choice = input(f"\n{BOLD}❯ Select number [1-{len(least_used_first)}] or 0 to cancel: {RESET}").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(least_used_first):
         target_app = least_used_first[int(choice)-1]
-        confirm = input(f"{RED}Are you sure you want to uninstall {target_app}? [y/N]: {RESET}").strip().lower()
+        confirm = input(f"\n{RED}{BOLD}Are you sure you want to uninstall {target_app}? [y/N]: {RESET}").strip().lower()
         if confirm == "y":
-            print(f"Uninstalling {target_app}...")
+            print(f"\n{YELLOW}🗑️  Uninstalling {target_app}...{RESET}")
             out = run_tv_shell(tv_ip, f"0 pkgcmd -u -t wgt -q {target_app}; 0 pkgcmd -u -t tpk -q {target_app}")
-            print(f"{GREEN}TV Log: {out}{RESET}")
-    input("\\nPress Enter to continue...")
+            print(f"{GREEN}✔ TV Log: {out}{RESET}")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def main():
     # If direct CLI args were given: python3 install.py <file.wgt> [tv_ip] [app_id]
@@ -738,6 +762,7 @@ def main():
             save_tv_ip(tv_ip)
 
     while True:
+        clear_screen()
         phone_ip = get_local_wifi_ip()
         is_online = check_tv_online(tv_ip)
         status_str = f"{GREEN}● ONLINE{RESET}" if is_online else f"{RED}✖ OFFLINE{RESET}"
@@ -749,60 +774,68 @@ def main():
 
         update_status = get_git_update_status()
 
-        print("\n" + "=" * 62)
-        print(f"{BOLD}       📺  Tizen Sideload Manager v{SCRIPT_VERSION} (Termux TUI)       {RESET}")
-        print("=" * 62)
-        print(f" Version   : v{SCRIPT_VERSION} [{update_status}]")
-        print(f" Status    : [{status_str}]")
-        print(f" TV IP     : {CYAN}{tv_ip}:26101{RESET}")
-        print(f" Phone IP  : {GREEN}{BOLD}{phone_ip}{RESET}")
-        print("-" * 62)
-        print(f"{YELLOW} ⚙️  SAMSUNG TV DEVELOPER MODE INPUT:{RESET}")
-        print(f"    1. TV Remote: Open Apps -> Press: {BOLD}1 2 3 4 5{RESET}")
-        print(f"    2. Developer Mode  -> {GREEN}{BOLD}[ ON ]{RESET}")
-        print(f"    3. Host PC IP box  -> Enter: {GREEN}{BOLD}{phone_ip}{RESET}")
-        print(f"    4. Hold TV Remote Power button 5s to reboot TV")
+        w = 64
+        border_c = CYAN
+        print(f"\n{border_c}╭" + "─" * (w - 2) + f"╮{RESET}")
+        print(f"{border_c}│{RESET}{BOLD}   📺  SAMSUNG TIZEN TV SIDELOAD MANAGER  v{SCRIPT_VERSION}{RESET}".ljust(w + 10) + f"{border_c}│{RESET}")
+        print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
+        print(f"{border_c}│{RESET}  Connection : [{status_str}]  {CYAN}{tv_ip}:26101{RESET}".ljust(w + 16) + f"{border_c}│{RESET}")
+        print(f"{border_c}│{RESET}  Phone Wi-Fi: {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}│{RESET}")
+        print(f"{border_c}│{RESET}  Version    : {update_status}".ljust(w + 14) + f"{border_c}│{RESET}")
         if is_online:
-            print("-" * 62)
-            print(f" Model     : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})")
+            print(f"{border_c}│{RESET}  TV Device  : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})".ljust(w + 14) + f"{border_c}│{RESET}")
             storage_info = tv_details.get("storage")
             if storage_info:
-                print(f" Storage   : {GREEN}{storage_info}{RESET}")
+                print(f"{border_c}│{RESET}  Storage    : {GREEN}{storage_info}{RESET}".ljust(w + 14) + f"{border_c}│{RESET}")
             if duid:
-                print(f" DUID      : {CYAN}{duid}{RESET}")
-        print("-" * 62)
-        print(" [1] 🚀 Sideload a Local .wgt file")
-        print(" [2] 📥 Download & Sideload Pre-signed Apps (TizenBrew/Jellyfin/VLC)")
-        print(" [3] ⚙️  Change TV IP Address")
-        print(" [4] 📋 Show Installed Apps on TV")
-        print(" [5] 🗑️  Uninstall an App from TV")
-        print(" [u] ⚡ Check for Script Updates (git pull)")
-        print(" [r] 🔄 Refresh (Re-scan files & TV status)")
-        print(" [6] 🚪 Exit")
-        print("=" * 60)
+                print(f"{border_c}│{RESET}  DUID       : {DIM}{duid}{RESET}".ljust(w + 14) + f"{border_c}│{RESET}")
+        print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
+        print(f"{border_c}│{RESET} {YELLOW}{BOLD}⚙️  DEVELOPER MODE (Enter in TV Screen):{RESET}".ljust(w + 14) + f"{border_c}│{RESET}")
+        print(f"{border_c}│{RESET}   1. Apps ➜ Remote: {BOLD}1 2 3 4 5{RESET} ➜ Turn Developer Mode {GREEN}[ON]{RESET}".ljust(w + 20) + f"{border_c}│{RESET}")
+        print(f"{border_c}│{RESET}   2. In 'Host PC IP', enter ➜ {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}│{RESET}")
+        print(f"{border_c}│{RESET}   3. Hold Remote Power button 5s to reboot TV".ljust(w) + f"{border_c}│{RESET}")
+        print(f"{border_c}╰" + "─" * (w - 2) + f"╯{RESET}")
 
-        choice = input("Select an option [1-5 or r]: ").strip().lower()
+        print(f"\n{BOLD}📦 SIDELOAD & APPS{RESET}")
+        print(f"  {CYAN}[1]{RESET} 🚀 Sideload Local Package (.wgt / .tpk from phone)")
+        print(f"  {CYAN}[2]{RESET} 📥 Community App Store (TizenBrew, Jellyfin, VLC, 50+ apps)")
+
+        print(f"\n{BOLD}📺 TV MANAGEMENT{RESET}")
+        print(f"  {CYAN}[3]{RESET} ⚙️  Change / Auto-Scan TV IP Address")
+        print(f"  {CYAN}[4]{RESET} 📋 List Installed Apps on TV")
+        print(f"  {CYAN}[5]{RESET} 🗑️  Uninstall an App from TV")
+
+        print(f"\n{BOLD}⚡ SYSTEM{RESET}")
+        print(f"  {CYAN}[u]{RESET} 🔄 Check for Updates (Auto-restart)")
+        print(f"  {CYAN}[r]{RESET} 🔃 Refresh Connection & TV Status")
+        print(f"  {CYAN}[6]{RESET} 🚪 Exit")
+        print(f"{DIM}" + "─" * w + f"{RESET}")
+
+        choice = input(f"{BOLD}❯ Select option [1-6, u, r]: {RESET}").strip().lower()
 
         if choice == "1":
             menu_sideload_local(tv_ip)
         elif choice == "2":
             menu_download_app(tv_ip)
         elif choice == "3":
-            print(f"\n [1] 🔍 Auto-Scan Wi-Fi Subnet for TV")
-            print(f" [2] ✍️  Manually Type IP Address")
-            sub_c = input("Choose [1-2]: ").strip()
+            print(f"\n{BOLD}⚙️  TV Connection Settings:{RESET}")
+            print(f"  [1] 🔍 Auto-Scan Wi-Fi Subnet for TV")
+            print(f"  [2] ✍️  Manually Type TV IP Address")
+            sub_c = input(f"\n{BOLD}❯ Choose [1-2]: {RESET}").strip()
             if sub_c == "1":
                 detected = scan_network_for_tv()
                 if detected:
                     tv_ip = detected
                     save_tv_ip(tv_ip)
                     print(f"{GREEN}✔ Connected and saved TV IP: {tv_ip}{RESET}")
+                input(f"\n{DIM}Press Enter to return...{RESET}")
             else:
-                new_ip = input(f"Enter new TV IP Address [current: {tv_ip}]: ").strip()
+                new_ip = input(f"\n{BOLD}Enter new TV IP Address [current: {tv_ip}]: {RESET}").strip()
                 if new_ip:
                     tv_ip = new_ip
                     save_tv_ip(tv_ip)
                     print(f"{GREEN}✔ Saved TV IP: {tv_ip}{RESET}")
+                input(f"\n{DIM}Press Enter to return...{RESET}")
         elif choice == "4":
             menu_list_installed_apps(tv_ip)
         elif choice == "5":
