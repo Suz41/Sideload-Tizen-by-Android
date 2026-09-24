@@ -57,25 +57,10 @@ fi
 
 # 4. Detect Phone IP
 PHONE_IP=$(python3 -c "
-import subprocess, socket
-def get_ip():
-    try:
-        out = subprocess.check_output(['/system/bin/ip', '-4', 'addr', 'show'], stderr=subprocess.DEVNULL).decode()
-        cur = None
-        for l in out.splitlines():
-            s = l.strip()
-            if ': ' in s and ('wlan' in s or 'ap' in s): cur = s
-            elif s.startswith('inet ') and cur: return s.split()[1].split('/')[0]
-            elif ': ' in s: cur = None
-    except Exception: pass
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8', 80))
-        res = s.getsockname()[0]
-        s.close()
-        return res
-    except Exception: return 'Unknown'
-print(get_ip())
+import sys
+sys.path.insert(0, '$SCRIPT_DIR')
+from install import get_local_wifi_ip
+print(get_local_wifi_ip())
 " 2>/dev/null || echo "Unknown")
 
 SAVED_TV_IP=$(cat "$HOME/.tizen_tv_ip" 2>/dev/null || echo "")

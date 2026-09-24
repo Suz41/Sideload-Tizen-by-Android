@@ -98,7 +98,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.0"
+SCRIPT_VERSION = "2.2.1"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -227,7 +227,27 @@ def explain_tv_error(err_str, context="install"):
     print(f"{YELLOW}+------------------------------------------------------------------------+{RESET}\n")
 
 def get_local_wifi_ip():
-    """Detect phone Wi-Fi or local network IPv4 address."""
+    """Detect phone Wi-Fi, hotspot, or local network IPv4 address."""
+    # 1. Check network interfaces via ioctl (detects hotspot ap0, softap, wlan1, wlan2, etc.)
+    candidate_ifaces = [
+        'ap0', 'ap1', 'softap0', 'wlan1', 'wlan2', 'swlan0', 'rndis0', 'wlan0', 'eth0'
+    ]
+    for ifname in candidate_ifaces:
+        try:
+            import struct, fcntl
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            ip = socket.inet_ntoa(fcntl.ioctl(
+                s.fileno(),
+                0x8915,
+                struct.pack('256s', ifname[:15].encode('utf-8'))
+            )[20:24])
+            s.close()
+            if ip and not ip.startswith('127.') and not ip.startswith('192.0.'):
+                return ip
+        except Exception:
+            pass
+
+    # 2. Try system ip command
     try:
         import subprocess
         out = subprocess.check_output(['/system/bin/ip', '-4', 'addr', 'show'], stderr=subprocess.DEVNULL).decode()
@@ -236,10 +256,14 @@ def get_local_wifi_ip():
             s_l = l.strip()
             if ': ' in s_l and ('wlan' in s_l or 'ap' in s_l): cur = s_l
             elif s_l.startswith('inet ') and cur:
-                return s_l.split()[1].split('/')[0]
+                found_ip = s_l.split()[1].split('/')[0]
+                if not found_ip.startswith('192.0.'):
+                    return found_ip
             elif ': ' in s_l: cur = None
     except Exception:
         pass
+
+    # 3. Fallback to outbound socket (ignore cellular 192.0.0.x if possible)
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
@@ -253,11 +277,11 @@ def get_local_wifi_ip():
 
 def scan_network_for_tv(phone_ip=None):
     """Scan local subnet on port 26101 to auto-detect Samsung TV."""
-    if not phone_ip or phone_ip == "Unknown":
+    if not phone_ip or phone_ip == "Unknown" or phone_ip.startswith("192.0."):
         phone_ip = get_local_wifi_ip()
 
     base = None
-    if phone_ip and "." in phone_ip and not phone_ip.startswith("127."):
+    if phone_ip and "." in phone_ip and not phone_ip.startswith("127.") and not phone_ip.startswith("192.0."):
         parts = phone_ip.split(".")
         base = ".".join(parts[:3])
     else:
@@ -268,7 +292,7 @@ def scan_network_for_tv(phone_ip=None):
     if not base or base.startswith("192.0."):
         base = "192.168.1"
 
-    print(f"\n{CYAN}[SCAN] Scanning Wi-Fi subnet {base}.0/24 for Samsung TV (port 26101)...{RESET}")
+    print(f"\n{CYAN}[SCAN] Scanning subnet {base}.0/24 for Samsung TV (port 26101)...{RESET}")
 
     found_ips = []
     import concurrent.futures
