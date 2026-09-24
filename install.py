@@ -98,7 +98,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.3"
+SCRIPT_VERSION = "2.2.4"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -408,35 +408,37 @@ def recv_pkt(s):
     p = recv_exact(s, length) if length > 0 else b""
     return cmd, a0, a1, p
 
-def run_tv_shell(tv_ip, cmd_str):
-    s = socket.socket()
-    s.settimeout(15.0)
-    try:
-        s.connect((tv_ip, 26101))
-        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
-        s.recv(1024)
-        service = f"shell:{cmd_str}\x00".encode()
-        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
-        cmd, r_id, l_id, p = recv_pkt(s)
-        out = b""
-        while True:
-            c, a0, a1, p = recv_pkt(s)
-            if not c or c == b"CLSE": break
-            if p: out += p
-            if c == b"WRTE":
-                s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
-        s.close()
-        return out.decode(errors="ignore").strip()
-    except Exception as e:
-        try: s.close()
-        except Exception: pass
-        return f"Connection failed: {e}"
+def run_tv_shell(tv_ip, cmd_str, retries=2):
+    for attempt in range(retries + 1):
+        s = socket.socket()
+        s.settimeout(15.0)
+        try:
+            time.sleep(0.6)  # Samsung TV rate-limiting cooldown between socket connections
+            s.connect((tv_ip, 26101))
+            s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
+            s.recv(1024)
+            service = f"shell:{cmd_str}\x00".encode()
+            s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
+            cmd, r_id, l_id, p = recv_pkt(s)
+            out = b""
+            while True:
+                c, a0, a1, p = recv_pkt(s)
+                if not c or c == b"CLSE": break
+                if p: out += p
+                if c == b"WRTE":
+                    s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
+            s.close()
+            return out.decode(errors="ignore").strip()
+        except Exception as e:
+            try: s.close()
+            except Exception: pass
+            if attempt < retries:
+                time.sleep(1.2)
+                continue
+            return f"Connection failed: {e}"
 
 def ensure_adb_connected(tv_ip):
-    try:
-        import subprocess
-        subprocess.run(['adb', 'connect', f'{tv_ip}:26101'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3)
-    except Exception: pass
+    pass
 
 
 def get_tv_details(tv_ip):
@@ -548,7 +550,9 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
 
     install_res = {"r1": "", "r2": ""}
     def install_worker():
+        time.sleep(1.0)  # Wait for TV sync socket to cleanly close
         install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_app_id} {remote_wgt}")
+        time.sleep(1.0)  # Cooldown between commands
         install_res["r2"] = run_tv_shell(tv_ip, f"0 pkgcmd -i -t {pkg_type} -p {remote_wgt}")
 
     th = threading.Thread(target=install_worker)
