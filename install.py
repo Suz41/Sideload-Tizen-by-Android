@@ -98,7 +98,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.1"
+SCRIPT_VERSION = "2.2.2"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
