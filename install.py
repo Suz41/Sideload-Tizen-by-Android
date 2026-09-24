@@ -98,7 +98,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.2"
+SCRIPT_VERSION = "2.2.3"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -573,6 +573,7 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     print(f"\r {GREEN}[OK] Installing on TV: [{bar_full}] 100% ({total_time:.1f}s){RESET}\n")
 
     r1, r2 = install_res["r1"], install_res["r2"]
+    combined_log = (r1 + " " + r2).strip()
     if r1: print(f"TV Log (vd_appinstall): {r1}")
     if r2: print(f"TV Log (pkgcmd): {r2}")
 
@@ -580,12 +581,29 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     r3 = run_tv_shell(tv_ip, f"0 app_launcher -s {final_app_id}")
     if r3: print(f"TV Log (app_launcher): {r3}")
 
-    if "failed" in (r1 + r2).lower():
+    is_failed = any(k in combined_log.lower() for k in ["failed", "error", "denied", "not permitted", "connection failed"])
+    has_success = any(k in (combined_log + " " + r3).lower() for k in ["success", "installed", "launching", "val=0", "passed"])
+
+    if is_failed:
         print(f"\n{RED}[ERROR] Installation failed on TV.{RESET}")
-        explain_tv_error(r1 + " " + r2)
+        explain_tv_error(combined_log or "Installation failed")
         return False
+    elif not combined_log and not r3:
+        # Samsung TV received package but TV shell execution was blocked / silent
+        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App package transferred to TV, but TV shell output was silent.{RESET}")
+        print(f"{YELLOW}------------------------------------------------------------------------{RESET}")
+        print(f" On Samsung Smart TV (Tizen 5.5+):")
+        print(f" 1. Go to your TV screen -> Open {BOLD}'Apps'{RESET}.")
+        print(f" 2. Look at the top right -> Click the {BOLD}Settings (Gear Icon){RESET}.")
+        print(f" 3. Check if {CYAN}{final_app_id}{RESET} is listed in installed apps.")
+        print(f" 4. Highlight the app and select {GREEN}'Add to Home'{RESET} to put it on your Home bar.")
+        print(f" 5. If not listed: make sure the app has a valid Samsung Certificate.")
+        print(f"    (Unsigned apps like raw Nuvio are blocked; install TizenBrew first!).")
+        print(f"{YELLOW}------------------------------------------------------------------------{RESET}\n")
+        return True
     else:
         print(f"\n{GREEN}{BOLD}[SUCCESS] App installed and launched on TV!{RESET}")
+        print(f"{CYAN}[TIP] On your TV: Open 'Apps' -> Settings (Gear icon) -> Highlight app -> 'Add to Home'.{RESET}\n")
         return True
 
 def menu_sideload_local(tv_ip):
