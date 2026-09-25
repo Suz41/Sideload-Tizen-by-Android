@@ -326,7 +326,7 @@ CONFIG_FILE = os.path.expanduser("~/.tizen_tv_ip")
 COMMUNITY_APPS = {
     "1": {"name": "TizenBrew (Homebrew App Store)", "file": "TizenBrew.wgt", "ver": "v2.0.5", "cat": "Framework", "min_tizen": "4.0"},
     "2": {"name": "TizenTube (Ad-free YouTube)", "file": "TizenTube.wgt", "ver": "v0.8.2", "cat": "Streaming", "min_tizen": "4.0"},
-    "3": {"name": "Jellyfin TV (Home Media Server)", "file": "Jellyfin.wgt", "ver": "v0.16.2", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/Apps2Samsung/tizen-community-packages/raw/main/Jellyfin.wgt"},
+    "3": {"name": "Jellyfin TV (Home Media Server)", "file": "Jellyfin.wgt", "ver": "v10.10.z", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin.wgt"},
     "4": {"name": "Stremio TV (Community App)", "file": "Stremio-Tizen4.wgt", "ver": "v1.7.0", "cat": "Streaming", "min_tizen": "4.0"},
     "5": {"name": "SmartTV Twitch (Ad-free Twitch)", "file": "SmartTV_Twitch.wgt", "ver": "v1.4.1", "cat": "Streaming", "min_tizen": "5.0"},
     "6": {"name": "VLC Media Player", "file": "VLC-TV.wgt", "ver": "v3.0.18", "cat": "Media", "min_tizen": "5.0"},
