@@ -128,7 +128,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.3.2"
+SCRIPT_VERSION = "2.3.3"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -859,7 +859,7 @@ def menu_sideload_local(tv_ip):
     print(f"\n{BOLD}[PACKAGES] Local Packages Found on Phone ({len(found_files)}):{RESET}")
     print(f"{DIM}" + "-" * 64 + f"{RESET}")
     for idx, (full_path, fname, origin) in enumerate(found_files, 1):
-        _, signed = get_wgt_metadata(full_path)
+        app_id, pkg_id, signed = get_wgt_metadata(full_path)
         status = f"{GREEN}Signed [OK]{RESET}" if signed else f"{YELLOW}Unsigned [!]{RESET}"
         ext = "TPK" if fname.endswith(".tpk") else "WGT"
         try:
@@ -868,8 +868,9 @@ def menu_sideload_local(tv_ip):
         except Exception:
             size_str = ""
         loc_str = "Samsung-T-Sideload" if "Samsung-T-Sideload" in origin else ("Downloads" if "Download" in origin else "Local folder")
+        id_info = f"  ID: {CYAN}{pkg_id or app_id}{RESET}" if (pkg_id or app_id) else ""
         print(f" {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{fname}{RESET}")
-        print(f"      Format: [{CYAN}{ext}{RESET}]  Size: {size_str}  Status: {status}  ({DIM}{loc_str}{RESET})")
+        print(f"      Format: [{CYAN}{ext}{RESET}]  Size: {size_str}  Status: {status}  ({DIM}{loc_str}{RESET}){id_info}")
     print(f"{DIM}" + "-" * 64 + f"{RESET}")
 
     choice = input(f"\n{BOLD}> Select package [1-{len(found_files)}] or 0 to cancel: {RESET}").strip()
