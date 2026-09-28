@@ -128,7 +128,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.3.1"
+SCRIPT_VERSION = "2.3.2"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -1000,43 +1000,56 @@ def menu_diagnostic_health(tv_ip):
         print(f"      {YELLOW}● WARN{RESET} : Port 8001 not responding (TV in deep standby or fast start disabled)")
 
     print(f"\n{BOLD}[3/5] Testing SDB Developer Daemon (Port 26101)...{RESET}")
-    sdb_online = check_tv_online(tv_ip)
-    if sdb_online:
-        print(f"      {GREEN}● PASS{RESET} : Port 26101 is open and responsive")
+    time.sleep(0.35)  # Rate-limiting cooldown for Samsung SDB daemon
+    sdb_online = False
+    handshake_ok = False
+    err_msg = ""
+    for attempt in range(2):
         try:
             s = socket.socket()
-            s.settimeout(3.0)
+            s.settimeout(3.5)
             s.connect((tv_ip, 26101))
             handshake = b"host::sdb-net-client\x00"
             s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
             resp = s.recv(1024)
             s.close()
+            sdb_online = True
             if b"CNXN" in resp or b"AUTH" in resp:
-                print(f"      {GREEN}● PASS{RESET} : SDB handshake successfully acknowledged by TV")
-            else:
-                print(f"      {YELLOW}● WARN{RESET} : Unexpected handshake response from TV")
+                handshake_ok = True
+                break
         except Exception as e:
-            print(f"      {RED}● FAIL{RESET} : SDB handshake socket error: {e}")
+            err_msg = str(e)
+            time.sleep(0.4)
+
+    if sdb_online:
+        print(f"      {GREEN}● PASS{RESET} : Port 26101 is open and responsive")
+        if handshake_ok:
+            print(f"      {GREEN}● PASS{RESET} : SDB handshake successfully acknowledged by TV")
+        else:
+            print(f"      {YELLOW}● WARN{RESET} : SDB port open, handshake response unexpected")
     else:
-        print(f"      {RED}● FAIL{RESET} : Port 26101 closed or unreachable! Enable Developer Mode on TV.")
+        print(f"      {RED}● FAIL{RESET} : SDB connection error: {err_msg}")
 
     print(f"\n{BOLD}[4/5] Testing TV Sync File Transfer Channel...{RESET}")
+    time.sleep(0.35)  # Rate-limiting cooldown
     sync_ok = False
-    try:
-        s = socket.socket()
-        s.settimeout(3.0)
-        s.connect((tv_ip, 26101))
-        handshake = b"host::sdb-net-client\x00"
-        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
-        s.recv(1024)
-        service = b"sync:\x00"
-        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
-        cmd, r_id, l_id, p = recv_pkt(s)
-        if cmd == b"OKAY":
-            sync_ok = True
-        s.close()
-    except Exception:
-        pass
+    for attempt in range(2):
+        try:
+            s = socket.socket()
+            s.settimeout(3.5)
+            s.connect((tv_ip, 26101))
+            handshake = b"host::sdb-net-client\x00"
+            s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
+            s.recv(1024)
+            service = b"sync:\x00"
+            s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
+            cmd, r_id, l_id, p = recv_pkt(s)
+            if cmd == b"OKAY":
+                sync_ok = True
+            s.close()
+            if sync_ok: break
+        except Exception:
+            time.sleep(0.4)
     if sync_ok:
         print(f"      {GREEN}● PASS{RESET} : Sync channel ready at: {details.get('sdk_toolpath', '/home/owner/share/tmp/sdk_tools')}")
     else:
