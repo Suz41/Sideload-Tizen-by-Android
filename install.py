@@ -99,7 +99,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.7"
+SCRIPT_VERSION = "2.2.8"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -609,7 +609,10 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     install_res = {"r1": "", "r2": ""}
     def install_worker():
         time.sleep(0.5)  # Wait for TV sync socket to cleanly close
-        install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_pkg_id} {remote_wgt}")
+        # Tizen vd_appinstall expects: 0 vd_appinstall <AppID> <wgt_path>
+        install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_app_id} {remote_wgt}")
+        if not install_res["r1"]:
+            install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_pkg_id} {remote_wgt}")
         time.sleep(0.5)  # Cooldown between commands
         install_res["r2"] = run_tv_shell(tv_ip, f"0 pkgcmd -i -t {pkg_type} -p {remote_wgt}")
 
@@ -644,9 +647,13 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         r3 = run_tv_shell(tv_ip, f"0 execute {final_app_id}")
     if r3: print(f"TV Log (was_execute): {r3}")
 
-    # Check installed apps list
-    installed_apps_raw = run_tv_shell(tv_ip, "0 vd_applist")
-    is_installed = final_pkg_id.lower() in installed_apps_raw.lower() or final_app_id.lower() in installed_apps_raw.lower()
+    # Wait for TV package manager to update registry
+    time.sleep(1.0)
+    installed_list = get_installed_apps_list(tv_ip)
+    is_installed = any(
+        final_pkg_id.lower() in x.lower() or final_app_id.lower() in x.lower()
+        for x in installed_list
+    )
 
     # Clean up staged package on TV
     run_tv_shell(tv_ip, f"0 rmfile {remote_wgt}")
@@ -662,25 +669,52 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         print(f"{CYAN}========================================================================{RESET}\n")
         return True
     else:
-        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App package transferred to TV, but TV installation did not confirm.{RESET}")
+        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App file transferred, but TV has not added it to the active app list.{RESET}")
         print(f"{YELLOW}------------------------------------------------------------------------{RESET}")
-        print(f" Common reasons on Samsung Smart TVs (Tizen 5.5):")
-        print(f" 1. {BOLD}Developer Mode Host IP:{RESET} In TV Apps -> press 1-2-3-4-5 -> make sure")
-        print(f"    Host PC IP is set to: {GREEN}{BOLD}{get_local_wifi_ip()}{RESET}")
-        print(f" 2. {BOLD}Cold Reboot Required:{RESET} After changing Host IP or installing,")
-        print(f"    hold TV remote Power button 5s until Samsung logo appears.")
-        print(f" 3. {BOLD}Check Apps Settings:{RESET} Open 'Apps' -> Settings (Gear icon ⚙️ in top right)")
-        print(f"    to check if {CYAN}{final_pkg_id}{RESET} was installed silently.")
+        print(f" {BOLD}WHY THIS HAPPENS & HOW TO FIX IT:{RESET}")
+        print(f" 1. {BOLD}Cold Reboot TV (Most Important):{RESET}")
+        print(f"    On retail Samsung TVs (Tizen 5.5), Developer Mode permissions only activate")
+        print(f"    AFTER a cold restart. {GREEN}Hold TV Remote Power button for 5-10s{RESET} until the TV")
+        print(f"    restarts with the Samsung logo, or unplug the TV from the wall for 10s.")
+        print(f" 2. {BOLD}Try Vanilla Jellyfin (OG):{RESET}")
+        print(f"    Jellyfin-OSA requires a background service (AprZAARz4r.service) which")
+        print(f"    Samsung Tizen 5.5 blocks on 32\" retail TVs without Partner certificates.")
+        print(f"    The Vanilla {GREEN}Jellyfin.wgt (OG){RESET} does not have this background service.")
+        print(f" 3. {BOLD}Alternative (Recommended): Use TizenBrew:{RESET}")
+        print(f"    Install {GREEN}TizenBrew.wgt{RESET} first. TizenBrew runs as a homebrew launcher and")
+        print(f"    lets you install and run Jellyfin directly inside it without certificate issues.")
+        print(f" 4. {BOLD}Check Apps Menu on TV:{RESET}")
+        print(f"    Press {BOLD}Home{RESET} -> {BOLD}Apps{RESET} -> {BOLD}Settings (Gear ⚙️ icon in top-right){RESET}.")
+        print(f"    Check if the app is already listed in downloaded apps.")
         print(f"{YELLOW}------------------------------------------------------------------------{RESET}\n")
         return False
 
+def get_installed_apps_list(tv_ip):
+    """Retrieve installed user packages from TV registry using 0 applist and 0 vd_applist."""
+    apps = []
+    res_applist = run_tv_shell(tv_ip, "0 applist")
+    for line in res_applist.splitlines():
+        l_s = line.strip()
+        if not l_s or any(k in l_s for k in ["Application List", "User's Application", "Name", "AppID", "==="]):
+            continue
+        parts = [p.strip() for p in l_s.split("\t") if p.strip()]
+        if parts:
+            app_id = parts[-1]
+            if app_id not in apps:
+                apps.append(app_id)
+    res_vd = run_tv_shell(tv_ip, "0 vd_applist")
+    for line in res_vd.splitlines():
+        l_s = line.strip()
+        if l_s and not l_s.startswith("Connection failed") and l_s not in apps:
+            apps.append(l_s)
+    return apps
+
 def menu_list_installed_apps(tv_ip):
     print(f"\n{CYAN}[SCAN] Querying installed community apps from Samsung TV...{RESET}")
-    res = run_tv_shell(tv_ip, "0 vd_applist")
-    lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
+    lines = get_installed_apps_list(tv_ip)
     if not lines:
         print(f"\n{YELLOW}[INFO] No sideloaded community apps currently detected in TV registry.{RESET}")
-        print(f"{DIM}Note: Built-in factory Samsung apps (Netflix, Prime) are managed by the firmware.{RESET}")
+        print(f"{DIM}Note: Built-in factory Samsung apps (Netflix, Prime) are managed by firmware.{RESET}")
     else:
         print(f"\n{BOLD}[APPS] Sideloaded Packages on TV ({len(lines)}):{RESET}")
         print(f"{DIM}" + "-" * 64 + f"{RESET}")
@@ -691,10 +725,9 @@ def menu_list_installed_apps(tv_ip):
 
 def menu_uninstall_app(tv_ip):
     print(f"\n{CYAN}[SCAN] Querying installed packages from Samsung TV...{RESET}")
-    res = run_tv_shell(tv_ip, "0 vd_applist")
-    raw_lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
+    raw_lines = get_installed_apps_list(tv_ip)
     if not raw_lines:
-        app_id = input(f"\n{BOLD}No apps found in registry. Enter Package ID manually to uninstall: {RESET}").strip()
+        app_id = input(f"\n{BOLD}No apps found in registry. Enter Package or App ID manually to uninstall: {RESET}").strip()
         if app_id:
             print(f"{YELLOW}[DEL] Uninstalling {app_id}...{RESET}")
             r = run_tv_shell(tv_ip, f"0 vd_appuninstall {app_id}")
