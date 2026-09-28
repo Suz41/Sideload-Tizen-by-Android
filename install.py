@@ -9,6 +9,7 @@ import struct
 import zipfile
 import threading
 import urllib.request
+import json
 import xml.etree.ElementTree as ET
 
 # ANSI Color & Style Codes for Clean Terminal Output
@@ -98,7 +99,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.6"
+SCRIPT_VERSION = "2.2.7"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -372,6 +373,7 @@ def check_tv_online(ip):
 
 def get_wgt_metadata(wgt_path):
     app_id = None
+    package_id = None
     is_signed = False
     try:
         with zipfile.ZipFile(wgt_path, "r") as z:
@@ -382,21 +384,30 @@ def get_wgt_metadata(wgt_path):
             if "config.xml" in names:
                 root = ET.fromstring(z.read("config.xml"))
                 for elem in root.iter():
-                    if elem.tag.endswith("application") and "id" in elem.attrib:
-                        app_id = elem.attrib["id"]
+                    if elem.tag.endswith("application"):
+                        if "id" in elem.attrib:
+                            app_id = elem.attrib["id"]
+                        if "package" in elem.attrib:
+                            package_id = elem.attrib["package"]
                         break
+                if not package_id and app_id:
+                    package_id = app_id.split(".")[0]
             # TPK format uses tizen-manifest.xml
             elif "tizen-manifest.xml" in names:
                 root = ET.fromstring(z.read("tizen-manifest.xml"))
+                if "package" in root.attrib:
+                    package_id = root.attrib["package"]
                 for elem in root.iter():
                     if (elem.tag.endswith("ui-application") or elem.tag.endswith("service-application")) and "appid" in elem.attrib:
                         app_id = elem.attrib["appid"]
                         break
                     elif "id" in elem.attrib and app_id is None:
                         app_id = elem.attrib["id"]
+                if not package_id and app_id:
+                    package_id = app_id.split(".")[0]
     except Exception as e:
         print(f"{YELLOW}Warning parsing package: {e}{RESET}")
-    return app_id, is_signed
+    return app_id, package_id, is_signed
 
 def recv_exact(s, n):
     buf = b""
@@ -414,13 +425,14 @@ def recv_pkt(s):
     return cmd, a0, a1, p
 
 def run_tv_shell(tv_ip, cmd_str, retries=2):
+    handshake = b"host::sdb-net-client\x00"
     for attempt in range(retries + 1):
         s = socket.socket()
         s.settimeout(15.0)
         try:
-            time.sleep(0.6)  # Samsung TV rate-limiting cooldown between socket connections
+            time.sleep(0.4)  # Rate-limiting cooldown between socket connections
             s.connect((tv_ip, 26101))
-            s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
+            s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
             s.recv(1024)
             service = f"shell:{cmd_str}\x00".encode()
             s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
@@ -438,36 +450,71 @@ def run_tv_shell(tv_ip, cmd_str, retries=2):
             try: s.close()
             except Exception: pass
             if attempt < retries:
-                time.sleep(1.2)
+                time.sleep(1.0)
                 continue
             return f"Connection failed: {e}"
 
 def ensure_adb_connected(tv_ip):
     pass
 
-
 def get_tv_details(tv_ip):
-    """Query TV model name, Tizen version, DUID, and available storage."""
+    """Query TV model name, Tizen version, DUID, and developer status via REST API & SDB capability."""
     details = {}
+    # 1. First try Samsung REST API (port 8001) - instant, accurate, non-blocking
     try:
-        raw = run_tv_shell(tv_ip, "0 vconftool -g db/menu/model_name; 0 vconftool -g db/system/tizen_version; 0 vconftool -g db/system/duid; 0 df -h /opt /home/owner")
-        lines = [l.strip() for l in raw.splitlines() if l.strip() and not l.startswith("Connection failed")]
-        if len(lines) >= 1: details["model"] = lines[0]
-        if len(lines) >= 2: details["tizen"] = lines[1]
-        if len(lines) >= 3: details["duid"] = lines[2]
-
-        # Parse storage line (look for /opt or /home/owner or root partition)
-        for line in lines[3:]:
-            parts = line.split()
-            if len(parts) >= 6 and (parts[5] in ["/opt", "/home/owner", "/"] or parts[0].startswith("/dev/")):
-                # Format: Filesystem Size Used Avail Use% Mounted
-                avail = parts[3]
-                size = parts[1]
-                used_pct = parts[4]
-                details["storage"] = f"{avail} free of {size} ({used_pct} used)"
-                break
+        req = urllib.request.Request(f"http://{tv_ip}:8001/api/v2/", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
+            data = json.loads(resp.read().decode())
+            device = data.get("device", {})
+            if device:
+                details["model"] = device.get("modelName", "")
+                details["name"] = device.get("name", "")
+                details["duid"] = device.get("duid", "").replace("uuid:", "")
+                details["dev_mode"] = "ON" if device.get("developerMode") == "1" else "OFF"
+                details["dev_ip"] = device.get("developerIP", "")
+                details["resolution"] = device.get("resolution", "")
     except Exception:
         pass
+
+    # 2. Query SDB capability service on port 26101
+    try:
+        s = socket.socket()
+        s.settimeout(2.5)
+        s.connect((tv_ip, 26101))
+        handshake = b"host::sdb-net-client\x00"
+        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
+        s.recv(1024)
+
+        srv = b"capability:\x00"
+        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(srv), sum(srv)&0xffffffff, 0x4e45504f^0xffffffff) + srv)
+        c, r, l, p = recv_pkt(s)
+        out = b""
+        while True:
+            c2, a0, a1, p2 = recv_pkt(s)
+            if not c2 or c2 == b"CLSE": break
+            if p2: out += p2
+            if c2 == b"WRTE":
+                s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r, 0, 0, 0x47414b4f^0xffffffff))
+        s.close()
+        for line in out.decode(errors="ignore").splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                k = k.strip()
+                v = v.strip()
+                if k == "platform_version" and not details.get("tizen"):
+                    details["tizen"] = v
+                elif k == "sdk_toolpath":
+                    details["sdk_toolpath"] = v
+                elif k == "cpu_arch":
+                    details["cpu_arch"] = v
+    except Exception:
+        pass
+
+    if "tizen" not in details:
+        details["tizen"] = "5.5"
+    if "sdk_toolpath" not in details:
+        details["sdk_toolpath"] = "/home/owner/share/tmp/sdk_tools"
+
     return details
 
 def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
@@ -476,8 +523,9 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         print(f"{RED}Error: File '{wgt_path}' not found!{RESET}")
         return False
 
-    meta_id, is_signed = get_wgt_metadata(wgt_path)
+    meta_id, pkg_id, is_signed = get_wgt_metadata(wgt_path)
     final_app_id = app_id or meta_id or "App"
+    final_pkg_id = pkg_id or (final_app_id.split('.')[0] if '.' in final_app_id else final_app_id)
 
     if not is_signed:
         print(f"\n{YELLOW}======================================================{RESET}")
@@ -490,19 +538,23 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         if confirm != "y":
             return False
 
-    print(f"\n{CYAN}Targeting : {wgt_path}{RESET}")
-    print(f"{CYAN}App ID    : {final_app_id}{RESET}")
-    print(f"{CYAN}TV IP     : {tv_ip}:26101{RESET}\n")
+    tv_details = get_tv_details(tv_ip)
+    sdk_toolpath = tv_details.get("sdk_toolpath", "/home/owner/share/tmp/sdk_tools")
+    remote_wgt = f"{sdk_toolpath}/{os.path.basename(wgt_path)}"
 
-    remote_wgt = f"/home/owner/share/tmp/sdk_tools/tmp/{os.path.basename(wgt_path)}"
+    print(f"\n{CYAN}Targeting  : {wgt_path}{RESET}")
+    print(f"{CYAN}Package ID : {final_pkg_id}{RESET}")
+    print(f"{CYAN}App ID     : {final_app_id}{RESET}")
+    print(f"{CYAN}TV IP      : {tv_ip}:26101{RESET}\n")
 
     print("Connecting to Samsung TV...")
     s = socket.socket()
     s.settimeout(15.0)
     try:
         s.connect((tv_ip, 26101))
-        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, 7, sum(b"host::\x00")&0xffffffff, 0x4e584e43^0xffffffff) + b"host::\x00")
-        recv_pkt(s)
+        handshake = b"host::sdb-net-client\x00"
+        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
+        s.recv(1024)
 
         service = b"sync:\x00"
         s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
@@ -541,6 +593,7 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         done_pld = struct.pack("<4sI", b"DONE", int(os.path.getmtime(wgt_path)))
         s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(done_pld), sum(done_pld)&0xffffffff, 0x45545257^0xffffffff) + done_pld)
         recv_pkt(s)
+        recv_pkt(s)  # Read final sync OKAY from TV
         s.close()
         print(f"\n{GREEN}[OK] File transfer complete.{RESET}")
     except Exception as e:
@@ -555,9 +608,9 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
 
     install_res = {"r1": "", "r2": ""}
     def install_worker():
-        time.sleep(1.0)  # Wait for TV sync socket to cleanly close
-        install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_app_id} {remote_wgt}")
-        time.sleep(1.0)  # Cooldown between commands
+        time.sleep(0.5)  # Wait for TV sync socket to cleanly close
+        install_res["r1"] = run_tv_shell(tv_ip, f"0 vd_appinstall {final_pkg_id} {remote_wgt}")
+        time.sleep(0.5)  # Cooldown between commands
         install_res["r2"] = run_tv_shell(tv_ip, f"0 pkgcmd -i -t {pkg_type} -p {remote_wgt}")
 
     th = threading.Thread(target=install_worker)
@@ -582,38 +635,88 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     print(f"\r {GREEN}[OK] Installing on TV: [{bar_full}] 100% ({total_time:.1f}s){RESET}\n")
 
     r1, r2 = install_res["r1"], install_res["r2"]
-    combined_log = (r1 + " " + r2).strip()
     if r1: print(f"TV Log (vd_appinstall): {r1}")
     if r2: print(f"TV Log (pkgcmd): {r2}")
 
     print(f"\n{CYAN}[START] Launching app on TV...{RESET}")
-    r3 = run_tv_shell(tv_ip, f"0 app_launcher -s {final_app_id}")
-    if r3: print(f"TV Log (app_launcher): {r3}")
+    r3 = run_tv_shell(tv_ip, f"0 was_execute {final_app_id}")
+    if not r3:
+        r3 = run_tv_shell(tv_ip, f"0 execute {final_app_id}")
+    if r3: print(f"TV Log (was_execute): {r3}")
 
-    is_failed = any(k in combined_log.lower() for k in ["failed", "error", "denied", "not permitted", "connection failed"])
-    has_success = any(k in (combined_log + " " + r3).lower() for k in ["success", "installed", "launching", "val=0", "passed"])
+    # Check installed apps list
+    installed_apps_raw = run_tv_shell(tv_ip, "0 vd_applist")
+    is_installed = final_pkg_id.lower() in installed_apps_raw.lower() or final_app_id.lower() in installed_apps_raw.lower()
 
-    if is_failed:
-        print(f"\n{RED}[ERROR] Installation failed on TV.{RESET}")
-        explain_tv_error(combined_log or "Installation failed")
-        return False
-    elif not combined_log and not r3:
-        # Samsung TV received package but TV shell execution was blocked / silent
-        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App package transferred to TV, but TV shell output was silent.{RESET}")
-        print(f"{YELLOW}------------------------------------------------------------------------{RESET}")
-        print(f" On Samsung Smart TV (Tizen 5.5+):")
-        print(f" 1. Go to your TV screen -> Open {BOLD}'Apps'{RESET}.")
-        print(f" 2. Look at the top right -> Click the {BOLD}Settings (Gear Icon){RESET}.")
-        print(f" 3. Check if {CYAN}{final_app_id}{RESET} is listed in installed apps.")
-        print(f" 4. Highlight the app and select {GREEN}'Add to Home'{RESET} to put it on your Home bar.")
-        print(f" 5. If not listed: make sure the app has a valid Samsung Certificate.")
-        print(f"    (Unsigned apps like raw Nuvio are blocked; install TizenBrew first!).")
-        print(f"{YELLOW}------------------------------------------------------------------------{RESET}\n")
+    # Clean up staged package on TV
+    run_tv_shell(tv_ip, f"0 rmfile {remote_wgt}")
+
+    if is_installed or any(k in (r1 + " " + r2 + " " + r3).lower() for k in ["success", "val=0", "passed", "installing[100]", "install completed"]):
+        print(f"\n{GREEN}{BOLD}[SUCCESS] App package '{final_pkg_id}' installed and launched on TV!{RESET}")
+        print(f"{CYAN}========================================================================{RESET}")
+        print(f"{BOLD}HOW TO ADD APP TO YOUR TV SCREEN:{RESET}")
+        print(f" 1. On TV remote, press {BOLD}Home{RESET} and navigate to {BOLD}'Apps'{RESET}.")
+        print(f" 2. At the top right, click the {BOLD}Settings (Gear ⚙️ icon){RESET}.")
+        print(f" 3. Scroll to {CYAN}{final_pkg_id}{RESET} in your downloaded apps.")
+        print(f" 4. Click it and select {GREEN}'Add to Home'{RESET} to pin it to your bottom home ribbon.")
+        print(f"{CYAN}========================================================================{RESET}\n")
         return True
     else:
-        print(f"\n{GREEN}{BOLD}[SUCCESS] App installed and launched on TV!{RESET}")
-        print(f"{CYAN}[TIP] On your TV: Open 'Apps' -> Settings (Gear icon) -> Highlight app -> 'Add to Home'.{RESET}\n")
-        return True
+        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App package transferred to TV, but TV installation did not confirm.{RESET}")
+        print(f"{YELLOW}------------------------------------------------------------------------{RESET}")
+        print(f" Common reasons on Samsung Smart TVs (Tizen 5.5):")
+        print(f" 1. {BOLD}Developer Mode Host IP:{RESET} In TV Apps -> press 1-2-3-4-5 -> make sure")
+        print(f"    Host PC IP is set to: {GREEN}{BOLD}{get_local_wifi_ip()}{RESET}")
+        print(f" 2. {BOLD}Cold Reboot Required:{RESET} After changing Host IP or installing,")
+        print(f"    hold TV remote Power button 5s until Samsung logo appears.")
+        print(f" 3. {BOLD}Check Apps Settings:{RESET} Open 'Apps' -> Settings (Gear icon ⚙️ in top right)")
+        print(f"    to check if {CYAN}{final_pkg_id}{RESET} was installed silently.")
+        print(f"{YELLOW}------------------------------------------------------------------------{RESET}\n")
+        return False
+
+def menu_list_installed_apps(tv_ip):
+    print(f"\n{CYAN}[SCAN] Querying installed community apps from Samsung TV...{RESET}")
+    res = run_tv_shell(tv_ip, "0 vd_applist")
+    lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
+    if not lines:
+        print(f"\n{YELLOW}[INFO] No sideloaded community apps currently detected in TV registry.{RESET}")
+        print(f"{DIM}Note: Built-in factory Samsung apps (Netflix, Prime) are managed by the firmware.{RESET}")
+    else:
+        print(f"\n{BOLD}[APPS] Sideloaded Packages on TV ({len(lines)}):{RESET}")
+        print(f"{DIM}" + "-" * 64 + f"{RESET}")
+        for idx, line in enumerate(lines, 1):
+            print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{line}{RESET}")
+        print(f"{DIM}" + "-" * 64 + f"{RESET}")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
+
+def menu_uninstall_app(tv_ip):
+    print(f"\n{CYAN}[SCAN] Querying installed packages from Samsung TV...{RESET}")
+    res = run_tv_shell(tv_ip, "0 vd_applist")
+    raw_lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
+    if not raw_lines:
+        app_id = input(f"\n{BOLD}No apps found in registry. Enter Package ID manually to uninstall: {RESET}").strip()
+        if app_id:
+            print(f"{YELLOW}[DEL] Uninstalling {app_id}...{RESET}")
+            r = run_tv_shell(tv_ip, f"0 vd_appuninstall {app_id}")
+            print(f"{GREEN}TV Response: {r or 'Done'}{RESET}")
+        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
+        return
+
+    print(f"\n{BOLD}[UNINSTALL] Installed Sideloaded Packages ({len(raw_lines)}):{RESET}")
+    print(f"{DIM}" + "-" * 64 + f"{RESET}")
+    for idx, pkg in enumerate(raw_lines, 1):
+        print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{pkg}{RESET}")
+    print(f"{DIM}" + "-" * 64 + f"{RESET}")
+
+    c = input(f"\n{BOLD}> Select package number to uninstall [1-{len(raw_lines)}] or 0 to cancel: {RESET}").strip()
+    if c.isdigit() and 1 <= int(c) <= len(raw_lines):
+        target_pkg = raw_lines[int(c) - 1]
+        confirm = input(f"{RED}{BOLD}Are you sure you want to uninstall '{target_pkg}' from TV? [y/N]: {RESET}").strip().lower()
+        if confirm == "y":
+            print(f"{YELLOW}[DEL] Uninstalling {target_pkg}...{RESET}")
+            r = run_tv_shell(tv_ip, f"0 vd_appuninstall {target_pkg}")
+            print(f"{GREEN}[OK] TV Response: {r or 'Successfully uninstalled'}{RESET}")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def menu_sideload_local(tv_ip):
     search_dirs = [
@@ -712,77 +815,6 @@ def menu_download_app(tv_ip):
         stream_and_install_wgt(tv_ip, wgt_file, app.get("app_id"))
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-def menu_list_installed_apps(tv_ip):
-    print(f"\n{CYAN}[SCAN] Querying installed apps from Samsung TV...{RESET}")
-    res = run_tv_shell(tv_ip, "0 app_launcher --list || 0 pkgcmd -l")
-    if not res or "failed" in res.lower() or "connection failed" in res.lower():
-        print(f"\n{RED}[FAIL] Could not retrieve app list from TV ({res}){RESET}")
-    else:
-        lines = [l.strip() for l in res.splitlines() if l.strip()]
-        print(f"\n{BOLD}[APPS] Installed Apps on TV ({len(lines)}):{RESET}")
-        print(f"{DIM}" + "-" * 64 + f"{RESET}")
-        for idx, line in enumerate(lines, 1):
-            print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{line}{RESET}")
-        print(f"{DIM}" + "-" * 64 + f"{RESET}")
-    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
-
-
-def menu_uninstall_app(tv_ip):
-    print(f"\n{CYAN}[SCAN] Querying installed packages & usage activity from Samsung TV...{RESET}")
-    # Query app list and access timestamps of app data directories
-    res = run_tv_shell(tv_ip, "0 app_launcher --list || 0 pkgcmd -l")
-    time_res = run_tv_shell(tv_ip, "0 ls -lut /opt/usr/apps /home/owner/apps_data 2>/dev/null || true")
-
-    if not res or "failed" in res.lower():
-        app_id = input(f"\n{BOLD}Enter App ID to uninstall: {RESET}").strip()
-        if app_id:
-            print(f"{YELLOW}[DEL] Uninstalling {app_id}...{RESET}")
-            r = run_tv_shell(tv_ip, f"0 pkgcmd -u -t wgt -q {app_id}; 0 pkgcmd -u -t tpk -q {app_id}")
-            print(f"{GREEN}TV Response: {r}{RESET}")
-        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
-        return
-
-    raw_lines = [l.strip() for l in res.splitlines() if l.strip() and not l.startswith("Connection failed")]
-    apps = []
-    for l in raw_lines:
-        app_clean = l.split()[0] if l.split() else l
-        if app_clean not in apps:
-            apps.append(app_clean)
-
-    if not apps:
-        print(f"\n{YELLOW}No apps found on TV.{RESET}")
-        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
-        return
-
-    # Parse usage order (least recently used first)
-    recent_order = []
-    for line in time_res.splitlines():
-        parts = line.split()
-        if parts:
-            fname = parts[-1]
-            for a in apps:
-                if (fname in a or a in fname) and a not in recent_order:
-                    recent_order.append(a)
-
-    least_used_first = [a for a in apps if a not in recent_order] + list(reversed(recent_order))
-
-    print(f"\n{BOLD}[UNINSTALL] Uninstall App from TV{RESET}  {DIM}(Sorted: Least Used -> Frequently Used){RESET}")
-    print(f"{DIM}" + "-" * 64 + f"{RESET}")
-    for idx, a in enumerate(least_used_first, 1):
-        tag = f"{YELLOW}[Least Used]{RESET}" if idx <= max(1, len(least_used_first)//3) else f"{CYAN}[Active]{RESET}"
-        print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{a.ljust(38)}{RESET} {tag}")
-    print(f"{DIM}" + "-" * 64 + f"{RESET}")
-
-    choice = input(f"\n{BOLD}> Select number [1-{len(least_used_first)}] or 0 to cancel: {RESET}").strip()
-    if choice.isdigit() and 1 <= int(choice) <= len(least_used_first):
-        target_app = least_used_first[int(choice)-1]
-        confirm = input(f"\n{RED}{BOLD}Are you sure you want to uninstall {target_app}? [y/N]: {RESET}").strip().lower()
-        if confirm == "y":
-            print(f"\n{YELLOW}[DEL] Uninstalling {target_app}...{RESET}")
-            out = run_tv_shell(tv_ip, f"0 pkgcmd -u -t wgt -q {target_app}; 0 pkgcmd -u -t tpk -q {target_app}")
-            print(f"{GREEN}[OK] TV Log: {out}{RESET}")
-    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
-
 def main():
     # If direct CLI args were given: python3 install.py <file.wgt> [tv_ip] [app_id]
     args = [a for a in sys.argv[1:] if not a.startswith("-")]
@@ -820,9 +852,11 @@ def main():
         status_str = f"{GREEN}[ONLINE]{RESET}" if is_online else f"{RED}[OFFLINE]{RESET}"
 
         tv_details = get_tv_details(tv_ip) if is_online else {}
-        model_name = tv_details.get("model", "Samsung Smart TV")
-        tizen_ver = tv_details.get("tizen", "Unknown")
+        model_name = tv_details.get("model") or tv_details.get("name") or "Samsung Smart TV"
+        tizen_ver = tv_details.get("tizen", "5.5")
         duid = tv_details.get("duid", "")
+        dev_ip = tv_details.get("dev_ip", "")
+        dev_mode = tv_details.get("dev_mode", "")
 
         update_status = get_git_update_status()
 
@@ -836,16 +870,22 @@ def main():
         print(f"{border_c}|{RESET}  Version    : {update_status}".ljust(w + 14) + f"{border_c}|{RESET}")
         if is_online:
             print(f"{border_c}|{RESET}  TV Device  : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})".ljust(w + 14) + f"{border_c}|{RESET}")
-            storage_info = tv_details.get("storage")
-            if storage_info:
-                print(f"{border_c}|{RESET}  Storage    : {GREEN}{storage_info}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
             if duid:
                 print(f"{border_c}|{RESET}  DUID       : {DIM}{duid}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+            if dev_mode:
+                print(f"{border_c}|{RESET}  Dev Mode   : {GREEN}{dev_mode}{RESET} (Host IP: {dev_ip or 'OK'})".ljust(w + 14) + f"{border_c}|{RESET}")
         print(f"{border_c}+" + "-" * (w - 2) + f"+{RESET}")
-        print(f"{border_c}|{RESET} {YELLOW}{BOLD}[!] DEVELOPER MODE (Enter in TV Screen):{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-        print(f"{border_c}|{RESET}   1. Apps -> Remote: {BOLD}1 2 3 4 5{RESET} -> Turn Developer Mode {GREEN}[ON]{RESET}".ljust(w + 20) + f"{border_c}|{RESET}")
-        print(f"{border_c}|{RESET}   2. In 'Host PC IP', enter -> {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-        print(f"{border_c}|{RESET}   3. Hold Remote Power button 5s to reboot TV".ljust(w) + f"{border_c}|{RESET}")
+
+        if dev_ip and phone_ip and dev_ip != phone_ip:
+            print(f"{border_c}|{RESET} {RED}{BOLD}[!] HOST IP MISMATCH DETECTED:{RESET}".ljust(w + 18) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   TV currently has Host IP: {RED}{dev_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   Your Phone IP is        : {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   -> Change Host IP in TV Apps (1-2-3-4-5) & Cold Reboot!".ljust(w) + f"{border_c}|{RESET}")
+        else:
+            print(f"{border_c}|{RESET} {YELLOW}{BOLD}[!] DEVELOPER MODE (Samsung TV):{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   1. Apps -> Remote: {BOLD}1 2 3 4 5{RESET} -> Developer Mode {GREEN}[ON]{RESET}".ljust(w + 20) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   2. In 'Host PC IP', enter -> {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+            print(f"{border_c}|{RESET}   3. Hold Remote Power button 5s to reboot TV".ljust(w) + f"{border_c}|{RESET}")
         print(f"{border_c}+" + "-" * (w - 2) + f"+{RESET}")
 
         print(f"\n{BOLD}[SIDELOAD & APPS]{RESET}")
