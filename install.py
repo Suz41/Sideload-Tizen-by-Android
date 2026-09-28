@@ -98,7 +98,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.5"
+SCRIPT_VERSION = "2.2.6"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -326,18 +326,23 @@ CONFIG_FILE = os.path.expanduser("~/.tizen_tv_ip")
 COMMUNITY_APPS = {
     "1": {"name": "TizenBrew (Homebrew App Store)", "file": "TizenBrew.wgt", "ver": "v2.0.5", "cat": "Framework", "min_tizen": "4.0"},
     "2": {"name": "TizenTube (Ad-free YouTube)", "file": "TizenTube.wgt", "ver": "v0.8.2", "cat": "Streaming", "min_tizen": "4.0"},
-    "3": {"name": "Jellyfin TV (Home Media Server)", "file": "Jellyfin.wgt", "ver": "v10.10.z", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin.wgt"},
-    "4": {"name": "Stremio TV (Community App)", "file": "Stremio-Tizen4.wgt", "ver": "v1.7.0", "cat": "Streaming", "min_tizen": "4.0"},
-    "5": {"name": "SmartTV Twitch (Ad-free Twitch)", "file": "SmartTV_Twitch.wgt", "ver": "v1.4.1", "cat": "Streaming", "min_tizen": "5.0"},
-    "6": {"name": "VLC Media Player", "file": "VLC-TV.wgt", "ver": "v3.0.18", "cat": "Media", "min_tizen": "5.0"},
-    "7": {"name": "Moonlight TV (PC Game Stream 4K)", "file": "Moonlight-Tizen.wgt", "ver": "v1.6.0", "cat": "Gaming", "min_tizen": "5.5"},
-    "8": {"name": "Chiaki (PlayStation Remote Play)", "file": "Chiaki-Tizen.wgt", "ver": "v2.2.0", "cat": "Gaming", "min_tizen": "5.5"},
-    "9": {"name": "Doom (Classic Doom Port)", "file": "Doom.wgt", "ver": "v1.1", "cat": "Gaming", "min_tizen": "4.0"},
-    "10": {"name": "GameBoy Emulator", "file": "GameBoy-Emulator.wgt", "ver": "v1.0", "cat": "Gaming", "min_tizen": "4.0"},
-    "11": {"name": "AirTizen (Apple AirPlay)", "file": "AirTizen.wgt", "ver": "v0.3.1", "cat": "Utilities", "min_tizen": "5.5"},
-    "12": {"name": "FCastReceiver (Chromecast Alt)", "file": "FCastReceiver.wgt", "ver": "v1.2.0", "cat": "Utilities", "min_tizen": "5.0"},
-    "13": {"name": "Tailscale (Mesh VPN Client - TPK)", "file": "Tailscale.tpk", "ver": "v1.78.1", "cat": "Utilities", "min_tizen": "5.0"},
-    "14": {"name": "iperf3 (Network Speed Tester)", "file": "iperf3-TV.wgt", "ver": "v3.16", "cat": "Utilities", "min_tizen": "4.0"}
+    "3": {"name": "Jellyfin TV (OSA) [Recommended]", "file": "Jellyfin-OSA.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OSA.wgt"},
+    "4": {"name": "Jellyfin TV (OG - Official Stable)", "file": "Jellyfin.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin.wgt"},
+    "5": {"name": "Jellyfin TV (GrayFix)", "file": "Jellyfin-GrayFix.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-GrayFix.wgt"},
+    "6": {"name": "Jellyfin TV (OblongIcon)", "file": "Jellyfin-OblongIcon.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OblongIcon.wgt"},
+    "7": {"name": "Jellyfin TV (Secondary Instance)", "file": "Jellyfin-secondary.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-secondary.wgt"},
+    "8": {"name": "Jellyfin TV (Legacy Tizen 2.4-4)", "file": "Jellyfin-legacy.wgt", "ver": "v10.8.z", "cat": "Streaming", "min_tizen": "2.4", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/download/2024-10-27-1821/Jellyfin.wgt"},
+    "9": {"name": "Stremio TV (Community App)", "file": "Stremio-Tizen4.wgt", "ver": "v1.7.0", "cat": "Streaming", "min_tizen": "4.0"},
+    "10": {"name": "SmartTV Twitch (Ad-free Twitch)", "file": "SmartTV_Twitch.wgt", "ver": "v1.4.1", "cat": "Streaming", "min_tizen": "5.0"},
+    "11": {"name": "VLC Media Player", "file": "VLC-TV.wgt", "ver": "v3.0.18", "cat": "Media", "min_tizen": "5.0"},
+    "12": {"name": "Moonlight TV (PC Game Stream 4K)", "file": "Moonlight-Tizen.wgt", "ver": "v1.6.0", "cat": "Gaming", "min_tizen": "5.5"},
+    "13": {"name": "Chiaki (PlayStation Remote Play)", "file": "Chiaki-Tizen.wgt", "ver": "v2.2.0", "cat": "Gaming", "min_tizen": "5.5"},
+    "14": {"name": "Doom (Classic Doom Port)", "file": "Doom.wgt", "ver": "v1.1", "cat": "Gaming", "min_tizen": "4.0"},
+    "15": {"name": "GameBoy Emulator", "file": "GameBoy-Emulator.wgt", "ver": "v1.0", "cat": "Gaming", "min_tizen": "4.0"},
+    "16": {"name": "AirTizen (Apple AirPlay)", "file": "AirTizen.wgt", "ver": "v0.3.1", "cat": "Utilities", "min_tizen": "5.5"},
+    "17": {"name": "FCastReceiver (Chromecast Alt)", "file": "FCastReceiver.wgt", "ver": "v1.2.0", "cat": "Utilities", "min_tizen": "5.0"},
+    "18": {"name": "Tailscale (Mesh VPN Client - TPK)", "file": "Tailscale.tpk", "ver": "v1.78.1", "cat": "Utilities", "min_tizen": "5.0"},
+    "19": {"name": "iperf3 (Network Speed Tester)", "file": "iperf3-TV.wgt", "ver": "v3.16", "cat": "Utilities", "min_tizen": "4.0"}
 }
 
 def get_saved_tv_ip():
@@ -678,12 +683,13 @@ def menu_download_app(tv_ip):
                 min_req = float(v.get("min_tizen", "4.0"))
                 compat_tag = f"{GREEN}Compatible [OK]{RESET}" if tv_ver >= min_req else f"{RED}Needs Tizen {min_req}+{RESET}"
                 ext = "TPK" if v.get("file", "").endswith(".tpk") else "WGT"
-                print(f"  {CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(33)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
+                print(f"  {CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(38)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
 
-    print(f"\n  {YELLOW}[15] [MORE] Browse Full Archive (50+ Community Packages)...{RESET}")
+    archive_idx = str(len(COMMUNITY_APPS) + 1)
+    print(f"\n  {YELLOW}[{archive_idx}] [MORE] Browse Full Archive (50+ Community Packages)...{RESET}")
     print(f"{DIM}" + "-" * 64 + f"{RESET}")
-    choice = input(f"\n{BOLD}> Select app [1-15] or 0 to cancel: {RESET}").strip()
-    if choice == "15":
+    choice = input(f"\n{BOLD}> Select app [1-{archive_idx}] or 0 to cancel: {RESET}").strip()
+    if choice == archive_idx:
         menu_browse_all_upstream(tv_ip)
         return
     elif choice in COMMUNITY_APPS:

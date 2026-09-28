@@ -66,7 +66,7 @@ YOUR PHONE IP : 192.168.1.5
 ============================================================
            Tizen Sideload Manager (Termux TUI)          
 ============================================================
- Version  : v2.0.0 [Up-to-date]
+ Version  : v2.2.6 [Up-to-date]
  Status   : [ONLINE]
  TV IP    : 10.253.229.145:26101
  Model    : Samsung QLED 4K (Tizen 6.5)
@@ -92,29 +92,57 @@ YOUR PHONE IP : 192.168.1.5
 
 --- Streaming ---
  [ 2] TizenTube (Ad-free YouTube + SponsorBlock)
- [ 3] Jellyfin TV (Home Media Server Client)
- [ 4] Stremio TV (Community App)
- [ 5] SmartTV Twitch (Ad-free Twitch Client)
+ [ 3] Jellyfin TV (OSA) [Recommended]
+ [ 4] Jellyfin TV (OG - Official Stable)
+ [ 5] Jellyfin TV (GrayFix)
+ [ 6] Jellyfin TV (OblongIcon)
+ [ 7] Jellyfin TV (Secondary Instance)
+ [ 8] Jellyfin TV (Legacy Tizen 2.4-4)
+ [ 9] Stremio TV (Community App)
+ [10] SmartTV Twitch (Ad-free Twitch Client)
 
 --- Media ---
- [ 6] VLC Media Player (Native Video Player)
+ [11] VLC Media Player (Native Video Player)
 
 --- Gaming ---
- [ 7] Moonlight TV (4K PC Game Streaming)
- [ 8] Chiaki (PlayStation 4/5 Remote Play)
- [ 9] Doom (Classic Doom Port)
- [10] GameBoy Emulator
+ [12] Moonlight TV (4K PC Game Streaming)
+ [13] Chiaki (PlayStation 4/5 Remote Play)
+ [14] Doom (Classic Doom Port)
+ [15] GameBoy Emulator
 
 --- Utilities ---
- [11] AirTizen (Apple AirPlay Receiver)
- [12] FCastReceiver (Open Chromecast Alternative)
- [13] Tailscale (Mesh VPN Client - Native TPK)
- [14] iperf3 (Network Speed Tester)
+ [16] AirTizen (Apple AirPlay Receiver)
+ [17] FCastReceiver (Open Chromecast Alternative)
+ [18] Tailscale (Mesh VPN Client - Native TPK)
+ [19] iperf3 (Network Speed Tester)
 
- [15] Browse All Community Apps (50+ Packages Live Archive)...
+ [20] Browse All Community Apps (50+ Packages Live Archive)...
 
-Select app [1-15] or 0 to cancel: 
 ```
+
+#### Community Apps Guide & Recommendations
+
+| App | Category | Use Case & Key Difference | Recommended? |
+| :--- | :--- | :--- | :--- |
+| **TizenBrew** | Framework | Mod loader & package runner. Run community plugins right from your TV remote. | 🌟 **Must-Have** |
+| **TizenTube** | Streaming | Ad-free YouTube with SponsorBlock, Return Dislike, and 4K HDR support. | 🌟 **Must-Have** |
+| **Jellyfin TV (OSA)** | Streaming | Direct 4K HDR playback using native Samsung **AVPlay** hardware + Smart Hub ribbon preview. | 🌟 **Top Recommendation** |
+| **Jellyfin TV (OG)** | Streaming | Vanilla official stable upstream web client build. | Good fallback |
+| **Jellyfin TV (GrayFix)** | Streaming | Fixes washed-out gray letterbox bars on widescreen movies. | If facing gray bars |
+| **Jellyfin TV (OblongIcon)** | Streaming | Wide rectangular tile for newer Samsung TV home bars. | For modern UI |
+| **Jellyfin TV (Secondary)** | Streaming | Alternate App ID allowing two Jellyfin apps installed side-by-side. | For dual servers |
+| **Jellyfin TV (Legacy)** | Streaming | v10.8.z build for older 2015–2017 Samsung TVs (Tizen 2.4 / 3.0 / 4.0). | For older TVs |
+| **Stremio TV** | Streaming | Torrent & Real-Debrid streaming media aggregator. | 🌟 **Must-Have** (for Debrid) |
+| **SmartTV Twitch** | Streaming | Ad-free Twitch client with BTTV / 7TV / FFZ chat emotes and custom sidebar. | 🌟 **Recommended** |
+| **VLC Media Player** | Media | Native media player for USB flash drives and local SMB/DLNA network shares. | 🌟 **Recommended** |
+| **Moonlight TV** | Gaming | 4K 60/120fps low-latency PC game streaming via NVIDIA Sunshine/GameStream. | 🌟 **Must-Have** (for PC Gamers) |
+| **Chiaki** | Gaming | PlayStation 4 & PlayStation 5 Remote Play client with controller support. | 🌟 **Must-Have** (for PS4/PS5) |
+| **Doom** | Gaming | Classic 1993 Doom game running natively on the TV processor. | Casual retro |
+| **GameBoy Emulator** | Gaming | GameBoy & GBC retro emulator with Bluetooth gamepad support. | Casual retro |
+| **AirTizen** | Utilities | Apple AirPlay receiver for Samsung TVs without native AirPlay 2. | For Apple users |
+| **FCastReceiver** | Utilities | Open-source Chromecast alternative to cast media from phone without Google services. | Open-source casting |
+| **Tailscale** | Utilities | Native TPK mesh VPN (WireGuard) to access your home server securely from anywhere. | For remote access |
+| **iperf3** | Utilities | Direct network bandwidth tester to diagnose Wi-Fi / Ethernet streaming speeds. | Diagnostic tool |
 
 ### 4. Real-Time Streaming & Installation
 ```text
@@ -159,7 +187,7 @@ Launching app on TV...
 * **Live TV Dashboard:** Displays TV online status, TV Model Name, Tizen OS version, hardware DUID, and **Available TV Storage Space** (`df -h`).
 * **Live OS Compatibility Checker:** The App Store compares your TV's Tizen version against each app's requirements and tags them with `[Compatible]` or `[Incompatible]`.
 * **Auto TV Discovery:** Automatically scans your local Wi-Fi subnet across all 254 addresses to find your TV's SDB port (`26101`) in seconds.
-* **1-Click Community App Store:** Download and install 14+ popular pre-signed apps, plus an instant live directory browser with access to **50+ community packages** (IPTV players, KickTV, retro emulators, security camera feeds, and utilities).
+* **1-Click Community App Store:** Download and install 19+ popular pre-signed apps (including Jellyfin OSA/OG variants), plus an instant live directory browser with access to **50+ community packages** (IPTV players, KickTV, retro emulators, security camera feeds, and utilities).
 * **Smart Ranked Uninstaller:** Queries TV package activity and sorts apps from **Least Used to Frequently Used**, making it easy to free up space.
 * **Integrated Auto-Updater:** Press `[u]` inside the menu or run `./setup.sh` to automatically pull updates from GitHub.
 * **Every-Step Error Explainer:** If any step fails (Wi-Fi, signature, permissions, or storage), it prints a clear diagnostic explaining what happened and provides an exact 1-2-3 fix.
