@@ -12,13 +12,16 @@ import urllib.request
 import json
 import xml.etree.ElementTree as ET
 
-# ANSI Color & Style Codes for Clean Terminal Output
-GREEN = "\033[92m"
-RED = "\033[91m"
-YELLOW = "\033[93m"
-CYAN = "\033[96m"
-BLUE = "\033[94m"
-MAGENTA = "\033[95m"
+# Vibrant 256-Color & ANSI Styling
+GREEN = "\033[38;5;48m"          # Bright Emerald Green
+RED = "\033[38;5;203m"            # Coral Red
+YELLOW = "\033[38;5;220m"         # Warm Gold
+CYAN = "\033[38;5;51m"            # Neon Cyan
+BLUE = "\033[38;5;39m"            # Deep Sky Blue
+MAGENTA = "\033[38;5;198m"        # Hot Pink / Magenta
+PURPLE = "\033[38;5;141m"         # Electric Purple
+ORANGE = "\033[38;5;208m"         # Electric Orange
+GRAY = "\033[38;5;242m"           # Muted Gray
 BOLD = "\033[1m"
 DIM = "\033[2m"
 RESET = "\033[0m"
@@ -38,10 +41,10 @@ def pad_row(content, width):
     return f"│  {content}" + " " * pad + "│"
 
 def render_progress_bar(current, total, width=24, speed_bps=0):
-    """Render a smooth Unicode block progress bar with MB/s and ETA."""
+    """Render a vibrant, smooth Unicode block progress bar with MB/s and ETA."""
     pct = min(100.0, (current / total * 100)) if total > 0 else 0
     filled_len = int(width * pct / 100)
-    bar = "█" * filled_len + "░" * (width - filled_len)
+    bar = f"{CYAN}" + "█" * filled_len + f"{GRAY}" + "░" * (width - filled_len) + f"{RESET}"
     if speed_bps >= 1048576:
         speed_str = f"{speed_bps / 1048576:.1f} MB/s"
     elif speed_bps > 0:
@@ -53,7 +56,7 @@ def render_progress_bar(current, total, width=24, speed_bps=0):
     rem_bytes = max(0, total - current)
     eta = (rem_bytes / speed_bps) if speed_bps > 0 else 0
     eta_str = f"{int(eta)}s" if eta < 60 else f"{int(eta//60)}m{int(eta%60)}s"
-    return f"╢{CYAN}{bar}{RESET}╟ {BOLD}{pct:5.1f}%{RESET} │ {cur_mb:.1f}/{tot_mb:.1f} MB │ {YELLOW}{speed_str}{RESET} │ ETA: {eta_str}"
+    return f"{PURPLE}╢{bar}{PURPLE}╟{RESET} {BOLD}{pct:5.1f}%{RESET} │ {cur_mb:.1f}/{tot_mb:.1f} MB │ {YELLOW}{speed_str}{RESET} │ {BLUE}ETA: {eta_str}{RESET}"
 
 def download_file_with_progress(url, dest_path, desc=None):
     """Download a file with a high-fidelity Unicode progress bar, speed, and size counter."""
@@ -125,7 +128,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.3.0"
+SCRIPT_VERSION = "2.3.1"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -729,6 +732,31 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         print("╰" + "─" * (w - 2) + "╯\n")
         return False
 
+def get_local_packages():
+    """Find all .wgt and .tpk packages stored on the phone."""
+    search_dirs = [
+        "/storage/emulated/0/Download/Samsung-T-Sideload",
+        "/sdcard/Download/Samsung-T-Sideload",
+        os.path.dirname(os.path.abspath(__file__)),
+        ".",
+        "/sdcard/Download",
+        os.path.expanduser("~/storage/downloads")
+    ]
+    found_files = []
+    seen = set()
+    for d in search_dirs:
+        if os.path.exists(d):
+            try:
+                for f in os.listdir(d):
+                    if f.endswith(".wgt") or f.endswith(".tpk"):
+                        full_p = os.path.join(d, f)
+                        if f not in seen and os.path.isfile(full_p):
+                            seen.add(f)
+                            found_files.append((full_p, f, d))
+            except Exception:
+                pass
+    return found_files
+
 def get_installed_apps_list(tv_ip):
     """Retrieve installed user packages from TV registry using 0 applist and 0 vd_applist."""
     apps = []
@@ -737,7 +765,7 @@ def get_installed_apps_list(tv_ip):
         l_s = line.strip()
         if not l_s or any(k in l_s for k in ["Application List", "User's Application", "Name", "AppID", "==="]):
             continue
-        parts = [p.strip() for p in l_s.split("\t") if p.strip()]
+        parts = l_s.split()
         if parts:
             app_id = parts[-1]
             if app_id not in apps:
@@ -750,18 +778,46 @@ def get_installed_apps_list(tv_ip):
     return apps
 
 def menu_list_installed_apps(tv_ip):
-    print(f"\n{CYAN}[SCAN] Querying installed community apps from Samsung TV...{RESET}")
-    lines = get_installed_apps_list(tv_ip)
-    if not lines:
-        print(f"\n{YELLOW}[INFO] No sideloaded community apps currently detected in TV registry.{RESET}")
-        print(f"{DIM}Note: Built-in factory Samsung apps (Netflix, Prime) are managed by firmware.{RESET}")
+    clear_screen()
+    w = 64
+    print(f"{PURPLE}╭" + "─" * (w - 2) + f"╮{RESET}")
+    print(pad_row(f"{BOLD}📱 TV & PHONE APPLICATION MANAGER{RESET}", w))
+    print(f"{PURPLE}╰" + "─" * (w - 2) + f"╯\n")
+
+    print(f"{BOLD}{CYAN}1. COMMUNITY APPS REGISTERED ON SAMSUNG TV:{RESET}")
+    print(f"{DIM}" + "─" * w + f"{RESET}")
+    tv_apps = get_installed_apps_list(tv_ip)
+    if not tv_apps:
+        print(f"  {YELLOW}● 0 apps currently registered in TV User 5001 sandbox.{RESET}")
+        print(f"    {DIM}(If you just installed an app, cold reboot TV with remote to activate){RESET}")
     else:
-        print(f"\n{BOLD}[APPS] Sideloaded Packages on TV ({len(lines)}):{RESET}")
-        print(f"{DIM}" + "-" * 64 + f"{RESET}")
-        for idx, line in enumerate(lines, 1):
-            print(f"  {CYAN}[{str(idx).rjust(2)}]{RESET} {BOLD}{line}{RESET}")
-        print(f"{DIM}" + "-" * 64 + f"{RESET}")
-    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
+        for idx, app in enumerate(tv_apps, 1):
+            print(f"  {GREEN}[{idx}]{RESET} {BOLD}{app}{RESET}")
+    print(f"{DIM}" + "─" * w + f"{RESET}\n")
+
+    print(f"{BOLD}{CYAN}2. PACKAGES DOWNLOADED ON PHONE (READY TO SIDELOAD):{RESET}")
+    print(f"{DIM}" + "─" * w + f"{RESET}")
+    local_pkgs = get_local_packages()
+    if not local_pkgs:
+        print(f"  {YELLOW}● No local packages found. Download some from Option [2] Community Store!{RESET}")
+    else:
+        for idx, (full_p, fname, origin) in enumerate(local_pkgs, 1):
+            ext = "TPK" if fname.endswith(".tpk") else "WGT"
+            try: sz = f"{os.path.getsize(full_p) / 1048576:.1f} MB"
+            except Exception: sz = ""
+            print(f"  {CYAN}[{idx:2d}]{RESET} {BOLD}{fname.ljust(32)}{RESET} [{PURPLE}{ext}{RESET}] {sz.rjust(7)}")
+    print(f"{DIM}" + "─" * w + f"{RESET}")
+
+    if local_pkgs:
+        print(f"\n{BOLD}Quick Action:{RESET} Enter a package number [1-{len(local_pkgs)}] to sideload to TV,")
+        c = input(f"or press {BOLD}Enter{RESET} to return to main menu: ").strip()
+        if c.isdigit() and 1 <= int(c) <= len(local_pkgs):
+            target = local_pkgs[int(c) - 1][0]
+            stream_and_install_wgt(tv_ip, target)
+            input(f"\n{DIM}Press Enter to return...{RESET}")
+            return
+    else:
+        input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def menu_uninstall_app(tv_ip):
     print(f"\n{CYAN}[SCAN] Querying installed packages from Samsung TV...{RESET}")
@@ -792,25 +848,7 @@ def menu_uninstall_app(tv_ip):
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def menu_sideload_local(tv_ip):
-    search_dirs = [
-        "/storage/emulated/0/Download/Samsung-T-Sideload",
-        "/sdcard/Download/Samsung-T-Sideload",
-        ".",
-        "/sdcard/Download",
-        os.path.expanduser("~/storage/downloads")
-    ]
-    found_files = []
-
-    for d in search_dirs:
-        if os.path.exists(d):
-            try:
-                for f in os.listdir(d):
-                    if f.endswith(".wgt") or f.endswith(".tpk"):
-                        full_p = os.path.join(d, f)
-                        if full_p not in [x[0] for x in found_files]:
-                            found_files.append((full_p, f, d))
-            except Exception:
-                pass
+    found_files = get_local_packages()
 
     if not found_files:
         print(f"\n{YELLOW}[!] No .wgt or .tpk package files found!{RESET}")
@@ -1100,28 +1138,32 @@ def main():
         duid = tv_details.get("duid", "")
         dev_ip = tv_details.get("dev_ip", "")
         dev_mode = tv_details.get("dev_mode", "")
+        local_packages = get_local_packages()
         installed_apps = get_installed_apps_list(tv_ip) if is_online else []
 
         update_status = get_git_update_status()
 
         w = 64
-        print("╭" + "─" * (w - 2) + "╮")
-        print(pad_row(f"{BOLD}📺 SAMSUNG TIZEN SIDELOAD MANAGER{RESET}   {CYAN}v{SCRIPT_VERSION}{RESET}", w))
-        print("├" + "─" * (w - 2) + "┤")
+        border_c = PURPLE
+        print(f"\n{border_c}╭" + "─" * (w - 2) + f"╮{RESET}")
+        print(pad_row(f"{BOLD}{MAGENTA}📺 SAMSUNG TIZEN SIDELOAD MANAGER{RESET}   {CYAN}v{SCRIPT_VERSION}{RESET}", w))
+        print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
         print(pad_row(f"{BOLD}STATUS{RESET}     : {status_badge}  {CYAN}{tv_ip}:26101{RESET}", w))
-        print(pad_row(f"{BOLD}PHONE IP{RESET}   : {GREEN}{BOLD}{phone_ip}{RESET} (Wi-Fi)", w))
+        print(pad_row(f"{BOLD}PHONE IP{RESET}   : {GREEN}{BOLD}{phone_ip}{RESET} {DIM}(Wi-Fi){RESET}", w))
         print(pad_row(f"{BOLD}VERSION{RESET}    : {update_status}", w))
         if is_online:
-            print(pad_row(f"{BOLD}TV MODEL{RESET}   : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})", w))
+            print(pad_row(f"{BOLD}TV MODEL{RESET}   : {YELLOW}{model_name}{RESET} {DIM}(Tizen {tizen_ver}){RESET}", w))
             if duid:
                 short_duid = duid[:20] + "..." if len(duid) > 20 else duid
                 print(pad_row(f"{BOLD}DUID{RESET}       : {DIM}{short_duid}{RESET}", w))
             if dev_mode:
                 ip_match_str = f"{GREEN}[MATCH ✓]{RESET}" if (dev_ip == phone_ip) else f"{RED}[MISMATCH ✗]{RESET}"
                 print(pad_row(f"{BOLD}DEV MODE{RESET}   : {GREEN}● {dev_mode}{RESET} (Host: {dev_ip or 'OK'}) {ip_match_str}", w))
-            app_count_str = f"{GREEN}{len(installed_apps)} App(s){RESET}" if installed_apps else f"{DIM}0 Apps{RESET}"
-            print(pad_row(f"{BOLD}INSTALLED{RESET}  : {app_count_str} registered in User 5001 sandbox", w))
-        print("├" + "─" * (w - 2) + "┤")
+            pkg_badge = f"{GREEN}{len(local_packages)} Packages Ready{RESET}" if local_packages else f"{YELLOW}0 Packages{RESET}"
+            app_badge = f"{GREEN}{len(installed_apps)} Apps Installed{RESET}" if installed_apps else f"{YELLOW}0 Apps Registered{RESET}"
+            print(pad_row(f"{BOLD}ON PHONE{RESET}   : {pkg_badge} {DIM}(.wgt / .tpk files){RESET}", w))
+            print(pad_row(f"{BOLD}ON TV{RESET}      : {app_badge} {DIM}(User 5001 sandbox){RESET}", w))
+        print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
 
         if is_online and dev_ip and phone_ip and dev_ip != phone_ip:
             print(pad_row(f"{RED}{BOLD}⚠ HOST IP MISMATCH DETECTED:{RESET}", w))
@@ -1133,24 +1175,22 @@ def main():
             print(pad_row(f"1. TV Apps ➔ Remote: {BOLD}1 2 3 4 5{RESET} ➔ Dev Mode {GREEN}[ON]{RESET}", w))
             print(pad_row(f"2. In 'Host PC IP', enter   ➔ {GREEN}{BOLD}{phone_ip}{RESET}", w))
             print(pad_row(f"3. Cold reboot TV (Hold Remote Power for 5s)", w))
-        print("╰" + "─" * (w - 2) + "╯")
+        print(f"{border_c}╰" + "─" * (w - 2) + f"╯{RESET}")
 
-        print(f"\n{BOLD}[SIDELOAD & APPS]{RESET}")
-        print(f"  {CYAN}[1]{RESET} Sideload Local Package (.wgt / .tpk from phone)")
-        print(f"  {CYAN}[2]{RESET} Community App Store (TizenBrew, Jellyfin OG, VLC, 50+ apps)")
-        print(f"  {CYAN}[3]{RESET} View Installed Sideloaded Apps ({len(installed_apps)} on TV)")
-        print(f"  {CYAN}[4]{RESET} Uninstall an App from TV")
-
-        print(f"\n{BOLD}[DIAGNOSTICS & TV TOOLS]{RESET}")
-        print(f"  {CYAN}[5]{RESET} 🩺 TV Health Check & Live Diagnostic Monitor")
-        print(f"  {CYAN}[6]{RESET} 🔄 TV Remote Cold Reboot Instructions")
-        print(f"  {CYAN}[7]{RESET} 🌐 Change / Auto-Scan TV IP Address")
-
-        print(f"\n{BOLD}[SYSTEM]{RESET}")
-        print(f"  {CYAN}[u]{RESET} Check for Updates (Auto-restart)")
-        print(f"  {CYAN}[r]{RESET} Refresh Monitor & Status")
-        print(f"  {CYAN}[0]{RESET} Exit")
-        print(f"{DIM}" + "─" * w + f"{RESET}")
+        print(f"\n{BOLD}{PURPLE}╭── [SIDELOAD & PACKAGES] ──────────────────────────────────────╮{RESET}")
+        print(f"│  {CYAN}[1]{RESET} {BOLD}📦 Sideload Local Package{RESET}  {GREEN}({len(local_packages)} ready on phone){RESET}")
+        print(f"│  {CYAN}[2]{RESET} {BOLD}🏪 Community App Store{RESET}    {DIM}(TizenBrew, Jellyfin, VLC, 50+ apps){RESET}")
+        print(f"│  {CYAN}[3]{RESET} {BOLD}📱 App & Package Hub{RESET}      {DIM}({len(installed_apps)} on TV, {len(local_packages)} on phone){RESET}")
+        print(f"│  {CYAN}[4]{RESET} {BOLD}🗑️  Uninstall App from TV{RESET}")
+        print(f"{PURPLE}├── [DIAGNOSTICS & TV TOOLS] ───────────────────────────────────┤{RESET}")
+        print(f"│  {CYAN}[5]{RESET} {BOLD}🩺 TV Health & Diagnostic Monitor{RESET}")
+        print(f"│  {CYAN}[6]{RESET} {BOLD}🔄 TV Remote Cold Reboot Instructions{RESET}")
+        print(f"│  {CYAN}[7]{RESET} {BOLD}🌐 Change / Auto-Scan TV IP Address{RESET}")
+        print(f"{PURPLE}├── [SYSTEM] ───────────────────────────────────────────────────┤{RESET}")
+        print(f"│  {CYAN}[u]{RESET} {BOLD}⬆️  Check for Updates{RESET}       {DIM}(Auto-restart){RESET}")
+        print(f"│  {CYAN}[r]{RESET} {BOLD}🔄 Refresh Dashboard{RESET}")
+        print(f"│  {CYAN}[0]{RESET} {BOLD}🚪 Exit{RESET}")
+        print(f"{PURPLE}╰───────────────────────────────────────────────────────────────╯{RESET}")
 
         choice = input(f"{BOLD}> Select option [0-7, u, r]: {RESET}").strip().lower()
 

@@ -64,14 +64,15 @@ YOUR PHONE IP : 192.168.1.5
 ### 2. Live Interactive Dashboard
 ```text
 ╭──────────────────────────────────────────────────────────────╮
-│  📺 SAMSUNG TIZEN SIDELOAD MANAGER   v2.3.0                   │
+│  📺 SAMSUNG TIZEN SIDELOAD MANAGER   v2.3.1                   │
 ├──────────────────────────────────────────────────────────────┤
 │  STATUS     : ● ONLINE  192.168.1.100:26101                  │
 │  PHONE IP   : 192.168.1.5 (Wi-Fi)                            │
-│  VERSION    : v2.3.0 (Latest) [OK]                           │
+│  VERSION    : v2.3.1 (Latest) [OK]                           │
 │  TV MODEL   : Samsung QLED 4K (Tizen 6.5)                    │
 │  DEV MODE   : ● ON (Host: 192.168.1.5) [MATCH ✓]             │
-│  INSTALLED  : 2 Apps registered in User 5001                 │
+│  ON PHONE   : 18 Packages Ready (.wgt / .tpk files)          │
+│  ON TV      : 2 Apps Installed (User 5001 sandbox)           │
 ├──────────────────────────────────────────────────────────────┤
 │  QUICK SETUP GUIDE:                                          │
 │  1. TV Apps ➔ Remote: 1 2 3 4 5 ➔ Dev Mode [ON]              │
@@ -79,22 +80,20 @@ YOUR PHONE IP : 192.168.1.5
 │  3. Cold reboot TV (Hold Remote Power for 5s)                │
 ╰──────────────────────────────────────────────────────────────╯
 
-[SIDELOAD & APPS]
-  [1] Sideload Local Package (.wgt / .tpk from phone)
-  [2] Community App Store (TizenBrew, Jellyfin OG, VLC, 50+ apps)
-  [3] View Installed Sideloaded Apps
-  [4] Uninstall an App from TV
-
-[DIAGNOSTICS & TV TOOLS]
-  [5] 🩺 TV Health Check & Live Diagnostic Monitor
-  [6] 🔄 TV Remote Cold Reboot Instructions
-  [7] 🌐 Change / Auto-Scan TV IP Address
-
-[SYSTEM]
-  [u] Check for Updates (Auto-restart)
-  [r] Refresh Monitor & Status
-  [0] Exit
-────────────────────────────────────────────────────────────────
+╭── [SIDELOAD & PACKAGES] ──────────────────────────────────────╮
+│  [1] 📦 Sideload Local Package  (18 ready on phone)           │
+│  [2] 🏪 Community App Store    (TizenBrew, Jellyfin, 50+ apps)│
+│  [3] 📱 App & Package Hub      (2 on TV, 18 on phone)         │
+│  [4] 🗑️  Uninstall App from TV                                │
+├── [DIAGNOSTICS & TV TOOLS] ───────────────────────────────────┤
+│  [5] 🩺 TV Health & Diagnostic Monitor                        │
+│  [6] 🔄 TV Remote Cold Reboot Instructions                    │
+│  [7] 🌐 Change / Auto-Scan TV IP Address                      │
+├── [SYSTEM] ───────────────────────────────────────────────────┤
+│  [u] ⬆️  Check for Updates       (Auto-restart)                │
+│  [r] 🔄 Refresh Dashboard                                     │
+│  [0] 🚪 Exit                                                  │
+╰───────────────────────────────────────────────────────────────╯
 ```
 
 ### 3. Pre-Signed Community App Store
