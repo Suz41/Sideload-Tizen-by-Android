@@ -66,26 +66,23 @@ print(get_local_wifi_ip())
 SAVED_TV_IP=$(cat "$HOME/.tizen_tv_ip" 2>/dev/null || echo "")
 
 clear
-echo "========================================================"
-echo "          Samsung Tizen TV Sideload Setup               "
-echo "========================================================"
-echo ""
-echo " Put your .wgt / .tpk files in File Manager at:"
-echo "    Internal Storage -> Download -> Samsung-T-Sideload"
-echo ""
-echo "+-------------------------------------------------------+"
-echo "|  [!] WHAT TO INPUT IN SAMSUNG TV DEVELOPER MODE:      |"
-echo "+-------------------------------------------------------+"
-echo "|  1. Open 'Apps' -> Press 1 2 3 4 5 on TV remote       |"
-echo "|  2. Turn Developer Mode -> [ ON ]                     |"
-echo "|  3. In 'Host PC IP' box, enter:                       |"
-echo "|     -> $PHONE_IP"
-echo "|  4. Hold TV Remote Power button 5s to reboot TV       |"
-echo "+-------------------------------------------------------+"
+echo "╭───────────────────────────────────────────────────────╮"
+echo "│  📺 SAMSUNG TIZEN TV SIDELOAD SETUP                   │"
+echo "├───────────────────────────────────────────────────────┤"
+echo "│  Put your .wgt / .tpk files in File Manager at:       │"
+echo "│  Internal Storage -> Download -> Samsung-T-Sideload   │"
+echo "├───────────────────────────────────────────────────────┤"
+echo "│  [!] WHAT TO INPUT IN SAMSUNG TV DEVELOPER MODE:      │"
+echo "│  1. Open 'Apps' -> Press 1 2 3 4 5 on TV remote       │"
+echo "│  2. Turn Developer Mode -> [ ON ]                     │"
+echo "│  3. In 'Host PC IP' box, enter:                       │"
+printf "│     -> \033[1;92m%-46s\033[0m│\n" "$PHONE_IP"
+echo "│  4. Hold TV Remote Power button 5s to reboot TV       │"
 if [ -n "$SAVED_TV_IP" ]; then
-echo " Detected Samsung TV IP : $SAVED_TV_IP:26101"
+echo "├───────────────────────────────────────────────────────┤"
+printf "│  Detected TV IP : \033[96m%-35s\033[0m│\n" "$SAVED_TV_IP:26101"
 fi
-echo "========================================================"
+echo "╰───────────────────────────────────────────────────────╯"
 echo ""
 
 # 5. Launch python manager from real script directory
