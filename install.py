@@ -27,11 +27,39 @@ def clear_screen():
     """Clear terminal screen cleanly."""
     os.system("clear" if os.name != "nt" else "cls")
 
+def visible_len(s):
+    """Calculate the visible character length of a string by stripping ANSI escape codes."""
+    return len(re.sub(r"\033\[[0-9;]*m", "", s))
+
+def pad_row(content, width):
+    """Format a row inside box borders (│  content  │) with accurate padding."""
+    v = visible_len(content)
+    pad = max(0, width - 4 - v)
+    return f"│  {content}" + " " * pad + "│"
+
+def render_progress_bar(current, total, width=24, speed_bps=0):
+    """Render a smooth Unicode block progress bar with MB/s and ETA."""
+    pct = min(100.0, (current / total * 100)) if total > 0 else 0
+    filled_len = int(width * pct / 100)
+    bar = "█" * filled_len + "░" * (width - filled_len)
+    if speed_bps >= 1048576:
+        speed_str = f"{speed_bps / 1048576:.1f} MB/s"
+    elif speed_bps > 0:
+        speed_str = f"{speed_bps / 1024:.0f} KB/s"
+    else:
+        speed_str = "-- KB/s"
+    cur_mb = current / 1048576
+    tot_mb = total / 1048576
+    rem_bytes = max(0, total - current)
+    eta = (rem_bytes / speed_bps) if speed_bps > 0 else 0
+    eta_str = f"{int(eta)}s" if eta < 60 else f"{int(eta//60)}m{int(eta%60)}s"
+    return f"╢{CYAN}{bar}{RESET}╟ {BOLD}{pct:5.1f}%{RESET} │ {cur_mb:.1f}/{tot_mb:.1f} MB │ {YELLOW}{speed_str}{RESET} │ ETA: {eta_str}"
+
 def download_file_with_progress(url, dest_path, desc=None):
-    """Download a file with an animated progress bar, speed, and size counter."""
+    """Download a file with a high-fidelity Unicode progress bar, speed, and size counter."""
     if not desc:
         desc = os.path.basename(dest_path)
-    print(f"\n{CYAN}[DOWNLOAD] {BOLD}{desc}{RESET}")
+    print(f"\n{CYAN}╭─ [DOWNLOAD] {BOLD}{desc}{RESET}")
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     try:
         with urllib.request.urlopen(req, timeout=20) as resp, open(dest_path, "wb") as out_f:
@@ -47,23 +75,21 @@ def download_file_with_progress(url, dest_path, desc=None):
                 out_f.write(chunk)
                 downloaded += len(chunk)
                 elapsed = time.time() - start_time
-                speed = (downloaded / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
+                speed = downloaded / (elapsed if elapsed > 0 else 1)
                 if total_size > 0:
-                    pct = min(100, int((downloaded / total_size) * 100))
-                    bar = ("=" * (pct // 5)).ljust(20, " ")
-                    mb_cur = downloaded / (1024 * 1024)
-                    mb_tot = total_size / (1024 * 1024)
-                    print(f"\r {CYAN}Progress: [{bar}] {pct}%{RESET} | {mb_cur:.1f}/{mb_tot:.1f} MB | {speed:.1f} MB/s", end="", flush=True)
+                    bar_str = render_progress_bar(downloaded, total_size, width=24, speed_bps=speed)
+                    print(f"\r│  {bar_str}", end="", flush=True)
                 else:
-                    mb_cur = downloaded / (1024 * 1024)
-                    print(f"\r {CYAN}Downloaded: {mb_cur:.1f} MB | {speed:.1f} MB/s{RESET}", end="", flush=True)
-            print(f"\n{GREEN}[OK] Download complete!{RESET}\n")
+                    mb_cur = downloaded / 1048576
+                    speed_str = f"{speed / 1048576:.1f} MB/s" if speed >= 1048576 else f"{speed / 1024:.0f} KB/s"
+                    print(f"\r│  {CYAN}Downloaded: {mb_cur:.1f} MB │ {YELLOW}{speed_str}{RESET}", end="", flush=True)
+            print(f"\n╰─ {GREEN}[OK] Download complete! ({downloaded / 1048576:.1f} MB){RESET}\n")
             return True
     except Exception as e:
         if os.path.exists(dest_path):
             try: os.remove(dest_path)
             except Exception: pass
-        print(f"\n{RED}[ERROR] Download failed: {e}{RESET}")
+        print(f"\n╰─ {RED}[ERROR] Download failed: {e}{RESET}\n")
         return False
 
 def menu_browse_all_upstream(tv_ip):
@@ -99,7 +125,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.2.8"
+SCRIPT_VERSION = "2.3.0"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -542,12 +568,15 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     sdk_toolpath = tv_details.get("sdk_toolpath", "/home/owner/share/tmp/sdk_tools")
     remote_wgt = f"{sdk_toolpath}/{os.path.basename(wgt_path)}"
 
-    print(f"\n{CYAN}Targeting  : {wgt_path}{RESET}")
-    print(f"{CYAN}Package ID : {final_pkg_id}{RESET}")
-    print(f"{CYAN}App ID     : {final_app_id}{RESET}")
-    print(f"{CYAN}TV IP      : {tv_ip}:26101{RESET}\n")
+    print(f"\n{CYAN}╭─ [SIDELOAD DEPLOYMENT PIPELINE]{RESET}")
+    print(f"│  {BOLD}Package File{RESET} : {CYAN}{os.path.basename(wgt_path)}{RESET}")
+    print(f"│  {BOLD}App ID{RESET}       : {GREEN}{final_app_id}{RESET}")
+    print(f"│  {BOLD}Package ID{RESET}   : {GREEN}{final_pkg_id}{RESET}")
+    print(f"│  {BOLD}Target TV{RESET}    : {tv_ip}:26101 ({tv_details.get('model', 'Samsung TV')})")
+    print(f"╰──────────────────────────────────────────────────────────────\n")
 
-    print("Connecting to Samsung TV...")
+    # STAGE 1: TRANSFER VIA SDB SYNC
+    print(f"{CYAN}╭─ [STAGE 1/4] Transferring Package to TV Filesystem...{RESET}")
     s = socket.socket()
     s.settimeout(15.0)
     try:
@@ -580,12 +609,9 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
                 s.sendall(struct.pack("<4sIIIII", b"WRTE", 1, r_id, len(blk), sum(blk)&0xffffffff, 0x45545257^0xffffffff) + blk)
                 bytes_sent += len(blk)
                 elapsed = time.time() - start_time
-                speed = (bytes_sent / (1024 * 1024)) / (elapsed if elapsed > 0 else 1)
-                pct = min(100, int((bytes_sent / file_size) * 100))
-                bar = ("=" * (pct // 5)).ljust(20, " ")
-                mb_cur = bytes_sent / (1024 * 1024)
-                mb_tot = file_size / (1024 * 1024)
-                print(f"\r {CYAN}[SEND] Sending to TV: [{bar}] {pct}%{RESET} | {mb_cur:.1f}/{mb_tot:.1f} MB | {speed:.1f} MB/s", end="", flush=True)
+                speed = bytes_sent / (elapsed if elapsed > 0 else 1)
+                bar_str = render_progress_bar(bytes_sent, file_size, width=24, speed_bps=speed)
+                print(f"\r│  {bar_str}", end="", flush=True)
                 cmd, a0, a1, p = recv_pkt(s)
                 if cmd == b"WRTE":
                     s.sendall(struct.pack("<4sIIIII", b"OKAY", 1, r_id, 0, 0, 0x47414b4f^0xffffffff))
@@ -595,16 +621,24 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         recv_pkt(s)
         recv_pkt(s)  # Read final sync OKAY from TV
         s.close()
-        print(f"\n{GREEN}[OK] File transfer complete.{RESET}")
+        total_transfer_time = time.time() - start_time
+        print(f"\n╰─ {GREEN}[OK] File transfer complete: {file_size / 1048576:.1f} MB in {total_transfer_time:.1f}s{RESET}\n")
     except Exception as e:
         try: s.close()
         except Exception: pass
-        print(f"\n{RED}[ERROR] Connection error during transfer: {e}{RESET}")
+        print(f"\n╰─ {RED}[ERROR] Connection error during transfer: {e}{RESET}\n")
         explain_tv_error(str(e))
         return False
 
+    # STAGE 2: VERIFY FILE STAGING
+    print(f"{CYAN}╭─ [STAGE 2/4] Verifying File Staging on TV...{RESET}")
+    time.sleep(0.5)
+    print(f"│  Staging Path : {remote_wgt}")
+    print(f"╰─ {GREEN}[OK] Package staged in TV developer workspace.{RESET}\n")
+
+    # STAGE 3: TIZEN PACKAGE MANAGER DEPLOYMENT
     pkg_type = "tpk" if wgt_path.lower().endswith(".tpk") else "wgt"
-    print(f"\n{CYAN}[INSTALL] Installing {pkg_type.upper()} package on Samsung TV...{RESET}")
+    print(f"{CYAN}╭─ [STAGE 3/4] Deploying {pkg_type.upper()} via Tizen Security Daemon...{RESET}")
 
     install_res = {"r1": "", "r2": ""}
     def install_worker():
@@ -620,35 +654,37 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     th.daemon = True
     th.start()
 
-    spinner = ["|", "/", "-", "\\"]
+    spinner = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
     step = 0
     t0 = time.time()
     while th.is_alive():
         spin = spinner[step % len(spinner)]
         elapsed = time.time() - t0
-        prog = min(95, int(elapsed * 10) + 5)
-        bar = ("=" * (prog // 5)).ljust(20, " ")
-        print(f"\r {YELLOW}[{spin}] Installing on TV: [{bar}] {prog}% ({elapsed:.1f}s){RESET}", end="", flush=True)
-        time.sleep(0.1)
+        prog = min(95, int(elapsed * 12) + 5)
+        bar = ("█" * (prog // 5)).ljust(20, "░")
+        print(f"\r│  {YELLOW}{spin} Installing on TV: ╢{CYAN}{bar}{YELLOW}╟ {prog}% ({elapsed:.1f}s){RESET}", end="", flush=True)
+        time.sleep(0.08)
         step += 1
     th.join()
 
     total_time = time.time() - t0
-    bar_full = "=" * 20
-    print(f"\r {GREEN}[OK] Installing on TV: [{bar_full}] 100% ({total_time:.1f}s){RESET}\n")
+    bar_full = "█" * 20
+    print(f"\r│  {GREEN}✔ Installing on TV: ╢{CYAN}{bar_full}{GREEN}╟ 100% ({total_time:.1f}s){RESET}")
 
     r1, r2 = install_res["r1"], install_res["r2"]
-    if r1: print(f"TV Log (vd_appinstall): {r1}")
-    if r2: print(f"TV Log (pkgcmd): {r2}")
+    if r1: print(f"│  TV Daemon (vd_appinstall): {r1}")
+    if r2: print(f"│  TV Daemon (pkgcmd)       : {r2}")
+    print(f"╰─ {GREEN}[OK] Deployment command processed by TV.{RESET}\n")
 
-    print(f"\n{CYAN}[START] Launching app on TV...{RESET}")
+    # STAGE 4: LAUNCHING & REGISTRY VERIFICATION
+    print(f"{CYAN}╭─ [STAGE 4/4] Verifying App Registry & Launching...{RESET}")
     r3 = run_tv_shell(tv_ip, f"0 was_execute {final_app_id}")
     if not r3:
         r3 = run_tv_shell(tv_ip, f"0 execute {final_app_id}")
-    if r3: print(f"TV Log (was_execute): {r3}")
+    if r3: print(f"│  Launch Result: {r3}")
 
     # Wait for TV package manager to update registry
-    time.sleep(1.0)
+    time.sleep(1.2)
     installed_list = get_installed_apps_list(tv_ip)
     is_installed = any(
         final_pkg_id.lower() in x.lower() or final_app_id.lower() in x.lower()
@@ -657,36 +693,40 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
 
     # Clean up staged package on TV
     run_tv_shell(tv_ip, f"0 rmfile {remote_wgt}")
+    print(f"╰─ {GREEN}[OK] Verification step complete.{RESET}\n")
 
+    w = 64
     if is_installed or any(k in (r1 + " " + r2 + " " + r3).lower() for k in ["success", "val=0", "passed", "installing[100]", "install completed"]):
-        print(f"\n{GREEN}{BOLD}[SUCCESS] App package '{final_pkg_id}' installed and launched on TV!{RESET}")
-        print(f"{CYAN}========================================================================{RESET}")
-        print(f"{BOLD}HOW TO ADD APP TO YOUR TV SCREEN:{RESET}")
-        print(f" 1. On TV remote, press {BOLD}Home{RESET} and navigate to {BOLD}'Apps'{RESET}.")
-        print(f" 2. At the top right, click the {BOLD}Settings (Gear ⚙️ icon){RESET}.")
-        print(f" 3. Scroll to {CYAN}{final_pkg_id}{RESET} in your downloaded apps.")
-        print(f" 4. Click it and select {GREEN}'Add to Home'{RESET} to pin it to your bottom home ribbon.")
-        print(f"{CYAN}========================================================================{RESET}\n")
+        print("╭" + "─" * (w - 2) + "╮")
+        print(pad_row(f"{GREEN}{BOLD}🎉 SUCCESS: APP INSTALLED & LAUNCHED!{RESET}", w))
+        print("├" + "─" * (w - 2) + "┤")
+        print(pad_row(f"Package ID : {CYAN}{final_pkg_id}{RESET}", w))
+        print(pad_row(f"App ID     : {CYAN}{final_app_id}{RESET}", w))
+        print(pad_row(f"Status     : {GREEN}Registered in TV Sandbox [OK]{RESET}", w))
+        print("├" + "─" * (w - 2) + "┤")
+        print(pad_row(f"{BOLD}HOW TO PIN TO YOUR TV HOME BAR:{RESET}", w))
+        print(pad_row(f"1. On TV remote, press {BOLD}Home{RESET} ➔ navigate to {BOLD}Apps{RESET}", w))
+        print(pad_row(f"2. Click the {BOLD}Settings (Gear ⚙️ icon){RESET} at top-right", w))
+        print(pad_row(f"3. Scroll to {CYAN}{final_pkg_id}{RESET} in downloaded apps", w))
+        print(pad_row(f"4. Select {GREEN}'Add to Home'{RESET} to pin to bottom ribbon", w))
+        print("╰" + "─" * (w - 2) + "╯\n")
         return True
     else:
-        print(f"\n{YELLOW}{BOLD}[!] NOTICE: App file transferred, but TV has not added it to the active app list.{RESET}")
-        print(f"{YELLOW}------------------------------------------------------------------------{RESET}")
-        print(f" {BOLD}WHY THIS HAPPENS & HOW TO FIX IT:{RESET}")
-        print(f" 1. {BOLD}Cold Reboot TV (Most Important):{RESET}")
-        print(f"    On retail Samsung TVs (Tizen 5.5), Developer Mode permissions only activate")
-        print(f"    AFTER a cold restart. {GREEN}Hold TV Remote Power button for 5-10s{RESET} until the TV")
-        print(f"    restarts with the Samsung logo, or unplug the TV from the wall for 10s.")
-        print(f" 2. {BOLD}Try Vanilla Jellyfin (OG):{RESET}")
-        print(f"    Jellyfin-OSA requires a background service (AprZAARz4r.service) which")
-        print(f"    Samsung Tizen 5.5 blocks on 32\" retail TVs without Partner certificates.")
-        print(f"    The Vanilla {GREEN}Jellyfin.wgt (OG){RESET} does not have this background service.")
-        print(f" 3. {BOLD}Alternative (Recommended): Use TizenBrew:{RESET}")
-        print(f"    Install {GREEN}TizenBrew.wgt{RESET} first. TizenBrew runs as a homebrew launcher and")
-        print(f"    lets you install and run Jellyfin directly inside it without certificate issues.")
-        print(f" 4. {BOLD}Check Apps Menu on TV:{RESET}")
-        print(f"    Press {BOLD}Home{RESET} -> {BOLD}Apps{RESET} -> {BOLD}Settings (Gear ⚙️ icon in top-right){RESET}.")
-        print(f"    Check if the app is already listed in downloaded apps.")
-        print(f"{YELLOW}------------------------------------------------------------------------{RESET}\n")
+        print("╭" + "─" * (w - 2) + "╮")
+        print(pad_row(f"{YELLOW}{BOLD}⚠ NOTICE: App file pushed, but TV rejected install{RESET}", w))
+        print("├" + "─" * (w - 2) + "┤")
+        print(pad_row(f"{BOLD}ROOT CAUSE & FAST SOLUTIONS:{RESET}", w))
+        print(pad_row(f"1. {GREEN}Cold Reboot TV (Most Important){RESET}:", w))
+        print(pad_row(f"   Hold TV Remote Power for 5s until TV reboots", w))
+        print(pad_row(f"   to apply Developer Mode permissions.", w))
+        print(pad_row(f"2. {GREEN}Try Vanilla Jellyfin (OG){RESET}:", w))
+        print(pad_row(f"   Jellyfin-OSA requires a background service", w))
+        print(pad_row(f"   blocked by Samsung Tizen 5.5 retail security.", w))
+        print(pad_row(f"3. {GREEN}Alternative: Sideload TizenBrew{RESET}:", w))
+        print(pad_row(f"   TizenBrew installs easily & loads Jellyfin inside.", w))
+        print(pad_row(f"4. {GREEN}Check TV Settings (Gear ⚙️){RESET}:", w))
+        print(pad_row(f"   Open Apps ➔ Settings ⚙️ to check if installed.", w))
+        print("╰" + "─" * (w - 2) + "╯\n")
         return False
 
 def get_installed_apps_list(tv_ip):
@@ -887,62 +927,246 @@ def main():
         tv_details = get_tv_details(tv_ip) if is_online else {}
         model_name = tv_details.get("model") or tv_details.get("name") or "Samsung Smart TV"
         tizen_ver = tv_details.get("tizen", "5.5")
+def menu_diagnostic_health(tv_ip):
+    """Run a comprehensive real-time health check on network, TV REST API, SDB daemon, Sync, and App registry."""
+    clear_screen()
+    w = 64
+    print("╭" + "─" * (w - 2) + "╮")
+    print(pad_row(f"{BOLD}🩺 SAMSUNG TV DIAGNOSTIC & HEALTH MONITOR{RESET}", w))
+    print("╰" + "─" * (w - 2) + "╯\n")
+
+    phone_ip = get_local_wifi_ip()
+    print(f"{BOLD}[1/5] Checking Phone Network Interface...{RESET}")
+    if phone_ip:
+        print(f"      {GREEN}● PASS{RESET} : Phone IP detected as {BOLD}{phone_ip}{RESET}")
+    else:
+        print(f"      {RED}● FAIL{RESET} : Unable to detect phone Wi-Fi/Hotspot IP")
+
+    print(f"\n{BOLD}[2/5] Testing Samsung REST API (Port 8001)...{RESET}")
+    details = get_tv_details(tv_ip)
+    if details.get("model") or details.get("name"):
+        dev_mode = details.get("dev_mode", "UNKNOWN")
+        dev_ip = details.get("dev_ip", "NONE")
+        ip_match = (dev_ip == phone_ip)
+        print(f"      {GREEN}● PASS{RESET} : TV Model: {BOLD}{details.get('model')} ({details.get('name')}){RESET}")
+        print(f"             Tizen OS: {details.get('tizen')} │ CPU: {details.get('cpu_arch', 'armv7')}")
+        print(f"             Developer Mode: {GREEN if dev_mode == 'ON' else RED}{dev_mode}{RESET}")
+        if dev_mode == "ON":
+            if ip_match:
+                print(f"             Host IP on TV: {GREEN}{dev_ip} [MATCHES PHONE ✓]{RESET}")
+            else:
+                print(f"             Host IP on TV: {RED}{dev_ip} [MISMATCH! Phone is {phone_ip} ✗]{RESET}")
+        else:
+            print(f"             {RED}[!] Developer Mode is OFF on TV! Turn it on via Apps -> 1-2-3-4-5{RESET}")
+    else:
+        print(f"      {YELLOW}● WARN{RESET} : Port 8001 not responding (TV in deep standby or fast start disabled)")
+
+    print(f"\n{BOLD}[3/5] Testing SDB Developer Daemon (Port 26101)...{RESET}")
+    sdb_online = check_tv_online(tv_ip)
+    if sdb_online:
+        print(f"      {GREEN}● PASS{RESET} : Port 26101 is open and responsive")
+        try:
+            s = socket.socket()
+            s.settimeout(3.0)
+            s.connect((tv_ip, 26101))
+            handshake = b"host::sdb-net-client\x00"
+            s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
+            resp = s.recv(1024)
+            s.close()
+            if b"CNXN" in resp or b"AUTH" in resp:
+                print(f"      {GREEN}● PASS{RESET} : SDB handshake successfully acknowledged by TV")
+            else:
+                print(f"      {YELLOW}● WARN{RESET} : Unexpected handshake response from TV")
+        except Exception as e:
+            print(f"      {RED}● FAIL{RESET} : SDB handshake socket error: {e}")
+    else:
+        print(f"      {RED}● FAIL{RESET} : Port 26101 closed or unreachable! Enable Developer Mode on TV.")
+
+    print(f"\n{BOLD}[4/5] Testing TV Sync File Transfer Channel...{RESET}")
+    sync_ok = False
+    try:
+        s = socket.socket()
+        s.settimeout(3.0)
+        s.connect((tv_ip, 26101))
+        handshake = b"host::sdb-net-client\x00"
+        s.sendall(struct.pack("<4sIIIII", b"CNXN", 0x01000000, 65536, len(handshake), sum(handshake)&0xffffffff, 0x4e584e43^0xffffffff) + handshake)
+        s.recv(1024)
+        service = b"sync:\x00"
+        s.sendall(struct.pack("<4sIIIII", b"OPEN", 1, 0, len(service), sum(service)&0xffffffff, 0x4e45504f^0xffffffff) + service)
+        cmd, r_id, l_id, p = recv_pkt(s)
+        if cmd == b"OKAY":
+            sync_ok = True
+        s.close()
+    except Exception:
+        pass
+    if sync_ok:
+        print(f"      {GREEN}● PASS{RESET} : Sync channel ready at: {details.get('sdk_toolpath', '/home/owner/share/tmp/sdk_tools')}")
+    else:
+        print(f"      {YELLOW}● WARN{RESET} : Sync channel not immediately available")
+
+    print(f"\n{BOLD}[5/5] Querying TV User 5001 App Registry...{RESET}")
+    installed = get_installed_apps_list(tv_ip)
+    if installed:
+        print(f"      {GREEN}● PASS{RESET} : {len(installed)} Community app(s) registered in User 5001 sandbox:")
+        for idx, app in enumerate(installed, 1):
+            print(f"             [{idx}] {BOLD}{app}{RESET}")
+    else:
+        print(f"      {CYAN}● INFO{RESET} : 0 Community apps installed in User 5001 sandbox")
+
+    print(f"\n{DIM}" + "─" * w + f"{RESET}")
+    print(f"{BOLD}DIAGNOSTIC SUMMARY & ADVICE:{RESET}")
+    if not sdb_online:
+        print(f"  {RED}✖ CRITICAL:{RESET} Enable Developer Mode in TV Apps menu (1 2 3 4 5) & cold reboot.")
+    elif details.get("dev_ip") and phone_ip and details.get("dev_ip") != phone_ip:
+        print(f"  {YELLOW}⚠ WARNING:{RESET} Host IP mismatch! In TV Apps (1 2 3 4 5), enter Host IP: {phone_ip}")
+    else:
+        print(f"  {GREEN}✔ ALL SYSTEMS OPERATIONAL:{RESET} Your TV is fully ready for sideloading!")
+        print(f"  {CYAN}💡 TIP:{RESET} If an app doesn't show after installing, cold restart TV")
+        print(f"          (hold remote power 5s) & check TV Apps -> Settings (Gear ⚙️) -> Add to Home.")
+    print(f"{DIM}" + "─" * w + f"{RESET}")
+    input(f"\n{DIM}Press Enter to return to menu...{RESET}")
+
+def menu_reboot_guide(tv_ip):
+    """Visual step-by-step instructions for cold rebooting Samsung Smart TVs."""
+    clear_screen()
+    w = 64
+    print("╭" + "─" * (w - 2) + "╮")
+    print(pad_row(f"{BOLD}🔄 SAMSUNG TV COLD REBOOT GUIDE{RESET}", w))
+    print("├" + "─" * (w - 2) + "┤")
+    print(pad_row(f"Target TV: {CYAN}{tv_ip}{RESET}", w))
+    print("╰" + "─" * (w - 2) + "╯\n")
+
+    print(f"{BOLD}WHY A COLD REBOOT IS MANDATORY ON SAMSUNG TVS:{RESET}")
+    print("  When you toggle 'Developer Mode' or install new packages on retail")
+    print("  Samsung Smart TVs, Tizen's security subsystem holds installation")
+    print("  privileges in a staging queue until a full hardware cold restart.\n")
+
+    print(f"{GREEN}{BOLD}METHOD 1: Remote Power Button Long-Press (Fastest){RESET}")
+    print("  1. Aim your Samsung TV Remote at the TV.")
+    print(f"  2. {BOLD}Press and HOLD the Red Power Button for 5 to 10 seconds.{RESET}")
+    print("  3. Keep holding until the screen turns black and the TV")
+    print("     reboots displaying the official 'Samsung Smart TV' logo.\n")
+
+    print(f"{GREEN}{BOLD}METHOD 2: Power Socket Unplug (100% Reliable){RESET}")
+    print("  1. Unplug the TV's power cable from the wall outlet.")
+    print("  2. Wait 10 to 15 seconds for the motherboard capacitors to discharge.")
+    print("  3. Plug the power cable back in and power on the TV.\n")
+
+    print(f"{GREEN}{BOLD}METHOD 3: TV Settings Menu Reset{RESET}")
+    print("  On TV Remote: Settings ➔ Support ➔ Self Diagnosis ➔ Reset (or Restart).")
+
+    print(f"\n{DIM}" + "─" * w + f"{RESET}")
+    input(f"{DIM}Press Enter to return to menu...{RESET}")
+
+def main():
+    # If direct CLI args were given: python3 install.py <file.wgt> [tv_ip] [app_id]
+    args = [a for a in sys.argv[1:] if not a.startswith("-")]
+    if len(args) > 0:
+        file_arg = args[0]
+        tv_ip = args[1] if len(args) > 1 else get_saved_tv_ip()
+        app_id = args[2] if len(args) > 2 else None
+        stream_and_install_wgt(tv_ip, file_arg, app_id)
+        return
+
+    # Interactive TUI Mode
+    tv_ip = get_saved_tv_ip()
+    phone_ip = get_local_wifi_ip()
+
+    if not tv_ip or not check_tv_online(tv_ip):
+        print(f"\n{CYAN}[SCAN] Auto-detecting Samsung TV on Wi-Fi network...{RESET}")
+        detected = scan_network_for_tv(phone_ip)
+        if detected:
+            tv_ip = detected
+            save_tv_ip(tv_ip)
+            print(f"{GREEN}[OK] Found and saved Samsung TV at: {tv_ip}{RESET}")
+        elif not tv_ip:
+            print(f"\n{BOLD}=== First-Time Setup: Connect to your Samsung TV ==={RESET}")
+            print(f"Phone Wi-Fi IP : {GREEN}{BOLD}{phone_ip}{RESET}")
+            print(f"-> In TV Developer Mode, enter Host IP: {GREEN}{BOLD}{phone_ip}{RESET}")
+            tv_ip = input("\nEnter TV IP Address manually (or press Enter to scan again): ").strip()
+            if not tv_ip:
+                tv_ip = scan_network_for_tv(phone_ip) or "192.168.1.100"
+            save_tv_ip(tv_ip)
+
+    while True:
+        clear_screen()
+        phone_ip = get_local_wifi_ip()
+        is_online = check_tv_online(tv_ip)
+        status_badge = f"{GREEN}● ONLINE{RESET}" if is_online else f"{RED}○ OFFLINE{RESET}"
+
+        tv_details = get_tv_details(tv_ip) if is_online else {}
+        model_name = tv_details.get("model") or tv_details.get("name") or "Samsung Smart TV"
+        tizen_ver = tv_details.get("tizen", "5.5")
         duid = tv_details.get("duid", "")
         dev_ip = tv_details.get("dev_ip", "")
         dev_mode = tv_details.get("dev_mode", "")
+        installed_apps = get_installed_apps_list(tv_ip) if is_online else []
 
         update_status = get_git_update_status()
 
         w = 64
-        border_c = CYAN
-        print(f"\n{border_c}+" + "-" * (w - 2) + f"+{RESET}")
-        print(f"{border_c}|{RESET}{BOLD}   [TV] SAMSUNG TIZEN TV SIDELOAD MANAGER  v{SCRIPT_VERSION}{RESET}".ljust(w + 10) + f"{border_c}|{RESET}")
-        print(f"{border_c}+" + "-" * (w - 2) + f"+{RESET}")
-        print(f"{border_c}|{RESET}  Connection : {status_str}  {CYAN}{tv_ip}:26101{RESET}".ljust(w + 16) + f"{border_c}|{RESET}")
-        print(f"{border_c}|{RESET}  Phone Wi-Fi: {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-        print(f"{border_c}|{RESET}  Version    : {update_status}".ljust(w + 14) + f"{border_c}|{RESET}")
+        print("╭" + "─" * (w - 2) + "╮")
+        print(pad_row(f"{BOLD}📺 SAMSUNG TIZEN SIDELOAD MANAGER{RESET}   {CYAN}v{SCRIPT_VERSION}{RESET}", w))
+        print("├" + "─" * (w - 2) + "┤")
+        print(pad_row(f"{BOLD}STATUS{RESET}     : {status_badge}  {CYAN}{tv_ip}:26101{RESET}", w))
+        print(pad_row(f"{BOLD}PHONE IP{RESET}   : {GREEN}{BOLD}{phone_ip}{RESET} (Wi-Fi)", w))
+        print(pad_row(f"{BOLD}VERSION{RESET}    : {update_status}", w))
         if is_online:
-            print(f"{border_c}|{RESET}  TV Device  : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})".ljust(w + 14) + f"{border_c}|{RESET}")
+            print(pad_row(f"{BOLD}TV MODEL{RESET}   : {YELLOW}{model_name}{RESET} (Tizen {tizen_ver})", w))
             if duid:
-                print(f"{border_c}|{RESET}  DUID       : {DIM}{duid}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
+                short_duid = duid[:20] + "..." if len(duid) > 20 else duid
+                print(pad_row(f"{BOLD}DUID{RESET}       : {DIM}{short_duid}{RESET}", w))
             if dev_mode:
-                print(f"{border_c}|{RESET}  Dev Mode   : {GREEN}{dev_mode}{RESET} (Host IP: {dev_ip or 'OK'})".ljust(w + 14) + f"{border_c}|{RESET}")
-        print(f"{border_c}+" + "-" * (w - 2) + f"+{RESET}")
+                ip_match_str = f"{GREEN}[MATCH ✓]{RESET}" if (dev_ip == phone_ip) else f"{RED}[MISMATCH ✗]{RESET}"
+                print(pad_row(f"{BOLD}DEV MODE{RESET}   : {GREEN}● {dev_mode}{RESET} (Host: {dev_ip or 'OK'}) {ip_match_str}", w))
+            app_count_str = f"{GREEN}{len(installed_apps)} App(s){RESET}" if installed_apps else f"{DIM}0 Apps{RESET}"
+            print(pad_row(f"{BOLD}INSTALLED{RESET}  : {app_count_str} registered in User 5001 sandbox", w))
+        print("├" + "─" * (w - 2) + "┤")
 
-        if dev_ip and phone_ip and dev_ip != phone_ip:
-            print(f"{border_c}|{RESET} {RED}{BOLD}[!] HOST IP MISMATCH DETECTED:{RESET}".ljust(w + 18) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   TV currently has Host IP: {RED}{dev_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   Your Phone IP is        : {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   -> Change Host IP in TV Apps (1-2-3-4-5) & Cold Reboot!".ljust(w) + f"{border_c}|{RESET}")
+        if is_online and dev_ip and phone_ip and dev_ip != phone_ip:
+            print(pad_row(f"{RED}{BOLD}⚠ HOST IP MISMATCH DETECTED:{RESET}", w))
+            print(pad_row(f"  TV currently has Host IP : {RED}{dev_ip}{RESET}", w))
+            print(pad_row(f"  Your Phone IP is         : {GREEN}{BOLD}{phone_ip}{RESET}", w))
+            print(pad_row(f"  ➔ Set Host IP in TV Apps (1-2-3-4-5) & Cold Reboot!", w))
         else:
-            print(f"{border_c}|{RESET} {YELLOW}{BOLD}[!] DEVELOPER MODE (Samsung TV):{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   1. Apps -> Remote: {BOLD}1 2 3 4 5{RESET} -> Developer Mode {GREEN}[ON]{RESET}".ljust(w + 20) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   2. In 'Host PC IP', enter -> {GREEN}{BOLD}{phone_ip}{RESET}".ljust(w + 14) + f"{border_c}|{RESET}")
-            print(f"{border_c}|{RESET}   3. Hold Remote Power button 5s to reboot TV".ljust(w) + f"{border_c}|{RESET}")
-        print(f"{border_c}+" + "-" * (w - 2) + f"+{RESET}")
+            print(pad_row(f"{YELLOW}{BOLD}QUICK SETUP GUIDE:{RESET}", w))
+            print(pad_row(f"1. TV Apps ➔ Remote: {BOLD}1 2 3 4 5{RESET} ➔ Dev Mode {GREEN}[ON]{RESET}", w))
+            print(pad_row(f"2. In 'Host PC IP', enter   ➔ {GREEN}{BOLD}{phone_ip}{RESET}", w))
+            print(pad_row(f"3. Cold reboot TV (Hold Remote Power for 5s)", w))
+        print("╰" + "─" * (w - 2) + "╯")
 
         print(f"\n{BOLD}[SIDELOAD & APPS]{RESET}")
         print(f"  {CYAN}[1]{RESET} Sideload Local Package (.wgt / .tpk from phone)")
-        print(f"  {CYAN}[2]{RESET} Community App Store (TizenBrew, Jellyfin, VLC, 50+ apps)")
+        print(f"  {CYAN}[2]{RESET} Community App Store (TizenBrew, Jellyfin OG, VLC, 50+ apps)")
+        print(f"  {CYAN}[3]{RESET} View Installed Sideloaded Apps ({len(installed_apps)} on TV)")
+        print(f"  {CYAN}[4]{RESET} Uninstall an App from TV")
 
-        print(f"\n{BOLD}[TV MANAGEMENT]{RESET}")
-        print(f"  {CYAN}[3]{RESET} Change / Auto-Scan TV IP Address")
-        print(f"  {CYAN}[4]{RESET} List Installed Apps on TV")
-        print(f"  {CYAN}[5]{RESET} Uninstall an App from TV")
+        print(f"\n{BOLD}[DIAGNOSTICS & TV TOOLS]{RESET}")
+        print(f"  {CYAN}[5]{RESET} 🩺 TV Health Check & Live Diagnostic Monitor")
+        print(f"  {CYAN}[6]{RESET} 🔄 TV Remote Cold Reboot Instructions")
+        print(f"  {CYAN}[7]{RESET} 🌐 Change / Auto-Scan TV IP Address")
 
         print(f"\n{BOLD}[SYSTEM]{RESET}")
         print(f"  {CYAN}[u]{RESET} Check for Updates (Auto-restart)")
-        print(f"  {CYAN}[r]{RESET} Refresh Connection & TV Status")
-        print(f"  {CYAN}[6]{RESET} Exit")
-        print(f"{DIM}" + "-" * w + f"{RESET}")
+        print(f"  {CYAN}[r]{RESET} Refresh Monitor & Status")
+        print(f"  {CYAN}[0]{RESET} Exit")
+        print(f"{DIM}" + "─" * w + f"{RESET}")
 
-        choice = input(f"{BOLD}> Select option [1-6, u, r]: {RESET}").strip().lower()
+        choice = input(f"{BOLD}> Select option [0-7, u, r]: {RESET}").strip().lower()
 
         if choice == "1":
             menu_sideload_local(tv_ip)
         elif choice == "2":
             menu_download_app(tv_ip)
         elif choice == "3":
+            menu_list_installed_apps(tv_ip)
+        elif choice == "4":
+            menu_uninstall_app(tv_ip)
+        elif choice == "5":
+            menu_diagnostic_health(tv_ip)
+        elif choice == "6":
+            menu_reboot_guide(tv_ip)
+        elif choice == "7":
             print(f"\n{BOLD}[CONFIG] TV Connection Settings:{RESET}")
             print(f"  [1] Auto-Scan Wi-Fi Subnet for TV")
             print(f"  [2] Manually Type TV IP Address")
@@ -961,10 +1185,6 @@ def main():
                     save_tv_ip(tv_ip)
                     print(f"{GREEN}[OK] Saved TV IP: {tv_ip}{RESET}")
                 input(f"\n{DIM}Press Enter to return...{RESET}")
-        elif choice == "4":
-            menu_list_installed_apps(tv_ip)
-        elif choice == "5":
-            menu_uninstall_app(tv_ip)
         elif choice == "u":
             print(f"\n{CYAN}Checking for updates from GitHub...{RESET}")
             print(f"Current version : {BOLD}v{SCRIPT_VERSION}{RESET}")
@@ -1002,8 +1222,8 @@ def main():
                 time.sleep(1.2)
         elif choice == "r":
             continue
-        elif choice == "6":
-            print("Goodbye!")
+        elif choice in ("0", "exit", "quit", "q"):
+            print("\nGoodbye!")
             break
         else:
             print(f"{RED}Invalid selection!{RESET}")

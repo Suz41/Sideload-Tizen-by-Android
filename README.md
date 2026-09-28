@@ -63,24 +63,38 @@ YOUR PHONE IP : 192.168.1.5
 
 ### 2. Live Interactive Dashboard
 ```text
-============================================================
-           Tizen Sideload Manager (Termux TUI)          
-============================================================
- Version  : v2.2.6 [Up-to-date]
- Status   : [ONLINE]
- TV IP    : 10.253.229.145:26101
- Model    : Samsung QLED 4K (Tizen 6.5)
- Storage  : 2.8G free of 4.0G (30% used)
- DUID     : 123456789ABCDEF...
-------------------------------------------------------------
- [1]  Sideload a Local .wgt / .tpk file
- [2]  Download & Sideload Pre-signed Apps
- [3]   Change TV IP Address (Auto-Scan Subnet)
- [4]  Show Installed Apps on TV
- [5]   Uninstall an App from TV
- [r]  Refresh (Re-scan files & TV status)
- [6]  Exit
-============================================================
+╭──────────────────────────────────────────────────────────────╮
+│  📺 SAMSUNG TIZEN SIDELOAD MANAGER   v2.3.0                   │
+├──────────────────────────────────────────────────────────────┤
+│  STATUS     : ● ONLINE  192.168.1.100:26101                  │
+│  PHONE IP   : 192.168.1.5 (Wi-Fi)                            │
+│  VERSION    : v2.3.0 (Latest) [OK]                           │
+│  TV MODEL   : Samsung QLED 4K (Tizen 6.5)                    │
+│  DEV MODE   : ● ON (Host: 192.168.1.5) [MATCH ✓]             │
+│  INSTALLED  : 2 Apps registered in User 5001                 │
+├──────────────────────────────────────────────────────────────┤
+│  QUICK SETUP GUIDE:                                          │
+│  1. TV Apps ➔ Remote: 1 2 3 4 5 ➔ Dev Mode [ON]              │
+│  2. In 'Host PC IP', enter   ➔ 192.168.1.5                   │
+│  3. Cold reboot TV (Hold Remote Power for 5s)                │
+╰──────────────────────────────────────────────────────────────╯
+
+[SIDELOAD & APPS]
+  [1] Sideload Local Package (.wgt / .tpk from phone)
+  [2] Community App Store (TizenBrew, Jellyfin OG, VLC, 50+ apps)
+  [3] View Installed Sideloaded Apps
+  [4] Uninstall an App from TV
+
+[DIAGNOSTICS & TV TOOLS]
+  [5] 🩺 TV Health Check & Live Diagnostic Monitor
+  [6] 🔄 TV Remote Cold Reboot Instructions
+  [7] 🌐 Change / Auto-Scan TV IP Address
+
+[SYSTEM]
+  [u] Check for Updates (Auto-restart)
+  [r] Refresh Monitor & Status
+  [0] Exit
+────────────────────────────────────────────────────────────────
 ```
 
 ### 3. Pre-Signed Community App Store
