@@ -51,48 +51,49 @@ Put your .wgt / .tpk files in File Manager at:
 YOUR PHONE IP : 192.168.1.5
 
  1. ON YOUR SAMSUNG TV:
-    • Apps -> Press 1 2 3 4 5 on remote
-    • Turn Developer Mode -> ON
-    • Host IP -> Enter: 192.168.1.5
-    • Hold TV Power button 5s to restart TV
+    - Apps -> Press 1 2 3 4 5 on remote
+    - Turn Developer Mode -> ON
+    - Host IP -> Enter: 192.168.1.5
+    - Hold TV Power button 5s to restart TV
 
  2. FIND TV IP ON TV:
-    • Settings -> General -> Network -> Network Status
+    - Settings -> General -> Network -> Network Status
 ========================================================
 ```
 
 ### 2. Live Interactive Dashboard
 ```text
 ╭──────────────────────────────────────────────────────────────╮
-│  📺 SAMSUNG TIZEN SIDELOAD MANAGER   v2.3.1                   │
+│  SAMSUNG TIZEN SIDELOAD MANAGER   v2.5.0                     │
 ├──────────────────────────────────────────────────────────────┤
-│  STATUS     : ● ONLINE  192.168.1.100:26101                  │
+│  STATUS     : [ONLINE]  192.168.1.100:26101                  │
 │  PHONE IP   : 192.168.1.5 (Wi-Fi)                            │
-│  VERSION    : v2.3.1 (Latest) [OK]                           │
+│  VERSION    : v2.5.0 (Latest) [OK]                           │
 │  TV MODEL   : Samsung QLED 4K (Tizen 6.5)                    │
-│  DEV MODE   : ● ON (Host: 192.168.1.5) [MATCH ✓]             │
+│  DEV MODE   : [ON] (Host: 192.168.1.5) [MATCH OK]            │
 │  ON PHONE   : 18 Packages Ready (.wgt / .tpk files)          │
 │  ON TV      : 2 Apps Installed (User 5001 sandbox)           │
 ├──────────────────────────────────────────────────────────────┤
 │  QUICK SETUP GUIDE:                                          │
-│  1. TV Apps ➔ Remote: 1 2 3 4 5 ➔ Dev Mode [ON]              │
-│  2. In 'Host PC IP', enter   ➔ 192.168.1.5                   │
+│  1. TV Apps -> Remote: 1 2 3 4 5 -> Dev Mode [ON]            │
+│  2. In 'Host PC IP', enter   -> 192.168.1.5                  │
 │  3. Cold reboot TV (Hold Remote Power for 5s)                │
 ╰──────────────────────────────────────────────────────────────╯
 
 ╭── [SIDELOAD & PACKAGES] ──────────────────────────────────────╮
-│  [1] 📦 Sideload Local Package  (18 ready on phone)           │
-│  [2] 🏪 Community App Store    (TizenBrew, Jellyfin, 50+ apps)│
-│  [3] 📱 App & Package Hub      (2 on TV, 18 on phone)         │
-│  [4] 🗑️  Uninstall App from TV                                │
+│  [1] Sideload Local Package  (18 ready on phone)              │
+│  [2] Community App Store    (TizenBrew, Gaming, 50+ apps)     │
+│  [s] Streaming Suite Hub    (Jellyfin OG, Litefin, Moonfin)   │
+│  [3] App & Package Hub      (2 on TV, 18 on phone)            │
+│  [4] Uninstall App from TV                                    │
 ├── [DIAGNOSTICS & TV TOOLS] ───────────────────────────────────┤
-│  [5] 🩺 TV Health & Diagnostic Monitor                        │
-│  [6] 🔄 TV Remote Cold Reboot Instructions                    │
-│  [7] 🌐 Change / Auto-Scan TV IP Address                      │
+│  [5] TV Health & Diagnostic Monitor                           │
+│  [6] TV Remote Cold Reboot Instructions                       │
+│  [7] Change / Auto-Scan TV IP Address                         │
 ├── [SYSTEM] ───────────────────────────────────────────────────┤
-│  [u] ⬆️  Check for Updates       (Auto-restart)                │
-│  [r] 🔄 Refresh Dashboard                                     │
-│  [0] 🚪 Exit                                                  │
+│  [u] Check for Updates       (Auto-restart)                   │
+│  [r] Refresh Dashboard                                        │
+│  [0] Exit                                                     │
 ╰───────────────────────────────────────────────────────────────╯
 ```
 
@@ -103,59 +104,87 @@ YOUR PHONE IP : 192.168.1.5
 --- Framework ---
  [ 1] TizenBrew (Homebrew App Store & Module Runner)
 
---- Streaming ---
- [ 2] TizenTube (Ad-free YouTube + SponsorBlock)
- [ 3] Jellyfin TV (OSA) [Recommended]
- [ 4] Jellyfin TV (OG - Official Stable)
- [ 5] Jellyfin TV (GrayFix)
- [ 6] Jellyfin TV (OblongIcon)
- [ 7] Jellyfin TV (Secondary Instance)
- [ 8] Jellyfin TV (Legacy Tizen 2.4-4)
- [ 9] Stremio TV (Community App)
- [10] SmartTV Twitch (Ad-free Twitch Client)
+--- Streaming Suite & Media ---
+ >> Jellyfin Official & Mod Builds:
+  [ 2] Jellyfin TV (OSA) [AVPlay 4K HDR]
+  [ 3] Jellyfin TV (OG - Official Stable Vanilla) [Recommended]
+  [ 4] Jellyfin TV (GrayFix - Letterbox Black Bar Fix)
+  [ 5] Jellyfin TV (OblongIcon - Modern Rectangular Tile)
+  [ 6] Jellyfin TV (Secondary Instance - Dual Server)
+  [ 7] Jellyfin TV (Legacy - Tizen 2.4-4.0)
+
+ >> Litefin High-Performance Client:
+  [ 8] Litefin TV (Normal - Stable)
+  [ 9] Litefin TV (Modern - Fast ES6 WebView)
+  [10] Litefin TV (Normal - Oblong Icon)
+  [11] Litefin TV (Legacy - Tizen 3-4)
+  [12] Litefin TV (Ultra-Legacy - Tizen 2.4)
+  [13] Litefin TV (Ultra-Legacy NoService - Security Bypass)
+
+ >> Moonfin Remote-First AVPlay Client:
+  [14] Moonfin TV (Regular - AVPlay 4K HDR & Moonbase)
+  [15] Moonfin TV (Oblong Icon)
+  [16] Moonfin TV (Legacy - Tizen 3-4)
+
+ >> Pelagica Client:
+  [17] Pelagica TV (Modern Jellyfin Client)
+
+ >> Video & Live Streaming:
+  [18] TizenTube (Ad-free YouTube + SponsorBlock)
+  [19] Stremio TV (Community App)
+  [20] SmartTV Twitch (Ad-free Twitch Client)
 
 --- Media ---
- [11] VLC Media Player (Native Video Player)
+ [21] VLC Media Player (Native Video Player)
 
 --- Gaming ---
- [12] Moonlight TV (4K PC Game Streaming)
- [13] Chiaki (PlayStation 4/5 Remote Play)
- [14] Doom (Classic Doom Port)
- [15] GameBoy Emulator
+ [22] Moonlight TV (4K PC Game Streaming)
+ [23] Chiaki (PlayStation 4/5 Remote Play)
+ [24] Doom (Classic Doom Port)
+ [25] GameBoy Emulator
 
 --- Utilities ---
- [16] AirTizen (Apple AirPlay Receiver)
- [17] FCastReceiver (Open Chromecast Alternative)
- [18] Tailscale (Mesh VPN Client - Native TPK)
- [19] iperf3 (Network Speed Tester)
+ [26] AirTizen (Apple AirPlay Receiver)
+ [27] FCastReceiver (Open Chromecast Alternative)
+ [28] Tailscale (Mesh VPN Client - Native TPK)
+ [29] iperf3 (Network Speed Tester)
 
- [20] Browse All Community Apps (50+ Packages Live Archive)...
-
+ [30] Browse All Community Apps (50+ Packages Live Archive)...
 ```
 
 #### Community Apps Guide & Recommendations
 
-| App | Category | Use Case & Key Difference | Recommended? |
+| App | Category | Use Case & Key Difference | Status |
 | :--- | :--- | :--- | :--- |
-| **TizenBrew** | Framework | Mod loader & package runner. Run community plugins right from your TV remote. | 🌟 **Must-Have** |
-| **TizenTube** | Streaming | Ad-free YouTube with SponsorBlock, Return Dislike, and 4K HDR support. | 🌟 **Must-Have** |
-| **Jellyfin TV (OSA)** | Streaming | Direct 4K HDR playback using native Samsung **AVPlay** hardware + Smart Hub ribbon preview. | 🌟 **Top Recommendation** |
-| **Jellyfin TV (OG)** | Streaming | Vanilla official stable upstream web client build. | Good fallback |
-| **Jellyfin TV (GrayFix)** | Streaming | Fixes washed-out gray letterbox bars on widescreen movies. | If facing gray bars |
-| **Jellyfin TV (OblongIcon)** | Streaming | Wide rectangular tile for newer Samsung TV home bars. | For modern UI |
-| **Jellyfin TV (Secondary)** | Streaming | Alternate App ID allowing two Jellyfin apps installed side-by-side. | For dual servers |
-| **Jellyfin TV (Legacy)** | Streaming | v10.8.z build for older 2015–2017 Samsung TVs (Tizen 2.4 / 3.0 / 4.0). | For older TVs |
-| **Stremio TV** | Streaming | Torrent & Real-Debrid streaming media aggregator. | 🌟 **Must-Have** (for Debrid) |
-| **SmartTV Twitch** | Streaming | Ad-free Twitch client with BTTV / 7TV / FFZ chat emotes and custom sidebar. | 🌟 **Recommended** |
-| **VLC Media Player** | Media | Native media player for USB flash drives and local SMB/DLNA network shares. | 🌟 **Recommended** |
-| **Moonlight TV** | Gaming | 4K 60/120fps low-latency PC game streaming via NVIDIA Sunshine/GameStream. | 🌟 **Must-Have** (for PC Gamers) |
-| **Chiaki** | Gaming | PlayStation 4 & PlayStation 5 Remote Play client with controller support. | 🌟 **Must-Have** (for PS4/PS5) |
-| **Doom** | Gaming | Classic 1993 Doom game running natively on the TV processor. | Casual retro |
-| **GameBoy Emulator** | Gaming | GameBoy & GBC retro emulator with Bluetooth gamepad support. | Casual retro |
-| **AirTizen** | Utilities | Apple AirPlay receiver for Samsung TVs without native AirPlay 2. | For Apple users |
-| **FCastReceiver** | Utilities | Open-source Chromecast alternative to cast media from phone without Google services. | Open-source casting |
-| **Tailscale** | Utilities | Native TPK mesh VPN (WireGuard) to access your home server securely from anywhere. | For remote access |
-| **iperf3** | Utilities | Direct network bandwidth tester to diagnose Wi-Fi / Ethernet streaming speeds. | Diagnostic tool |
+| **TizenBrew** | Framework | Mod loader & package runner. Run community plugins right from your TV remote. | Essential |
+| **Jellyfin TV (OG)** | Streaming | Vanilla official stable upstream web client build. Pure original release. | **[Recommended]** Official Original |
+| **Jellyfin TV (OSA)** | Streaming | Direct 4K HDR playback using native Samsung **AVPlay** hardware + Smart Hub ribbon preview. | AVPlay Video Engine |
+| **Jellyfin TV (GrayFix)** | Streaming | Fixes washed-out gray letterbox bars on widescreen movies. | Letterbox Fix |
+| **Jellyfin TV (OblongIcon)** | Streaming | Wide rectangular tile for newer Samsung TV home bars. | Modern UI |
+| **Jellyfin TV (Secondary)** | Streaming | Alternate App ID allowing two Jellyfin apps installed side-by-side. | Dual Server Setup |
+| **Jellyfin TV (Legacy)** | Streaming | v10.8.z build for older 2015-2017 Samsung TVs (Tizen 2.4 / 3.0 / 4.0). | Older TVs |
+| **Litefin TV (Normal)** | Streaming | Ultra-responsive, lightweight Jellyfin client with AVPlay backend and ASS/PGS subtitle support. | High-Performance |
+| **Litefin TV (Modern)** | Streaming | ES6+ build optimized for faster execution on modern Tizen 6.0+ WebViews. | Modern WebViews |
+| **Litefin TV (Oblong)** | Streaming | Stable Litefin build packaged with wide rectangular home-screen tile. | Modern UI |
+| **Litefin TV (Legacy)** | Streaming | Backward-compatible Litefin build tailored for Tizen 3.0 and 4.0 chipsets. | Older TVs |
+| **Litefin TV (Ultra-Legacy)** | Streaming | Polyfilled build for vintage 2015-2016 Tizen 2.4 Samsung Smart TVs. | Legacy Hardware |
+| **Litefin TV (NoService)** | Streaming | Stripped background service to bypass TV security policies and installation error -14. | Security Workaround |
+| **Moonfin TV (Regular)** | Streaming | Premium remote-first Jellyfin client with AVPlay hardware pipeline, lossless audio passthrough, and Moonbase sync. | Remote-First AVPlay |
+| **Moonfin TV (Oblong)** | Streaming | Moonfin TV client packaged with modern horizontal oblong launcher icon. | Modern UI |
+| **Moonfin TV (Legacy)** | Streaming | Moonfin build adapted for older Tizen 3.0 & 4.0 Samsung TVs. | Older TVs |
+| **Pelagica TV** | Streaming | Sleek, modern client for Jellyfin with responsive UI, multi-server support, and fast browsing. | Multi-Server Client |
+| **TizenTube** | Streaming | Ad-free YouTube with SponsorBlock, Return Dislike, and 4K HDR support. | Ad-Free YouTube |
+| **Stremio TV** | Streaming | Torrent & Real-Debrid streaming media aggregator. | For Debrid |
+| **SmartTV Twitch** | Streaming | Ad-free Twitch client with BTTV / 7TV / FFZ chat emotes and custom sidebar. | Ad-Free Twitch |
+| **VLC Media Player** | Media | Native media player for USB flash drives and local SMB/DLNA network shares. | Media Player |
+| **Moonlight TV** | Gaming | 4K 60/120fps low-latency PC game streaming via NVIDIA Sunshine/GameStream. | PC Gamers |
+| **Chiaki** | Gaming | PlayStation 4 & PlayStation 5 Remote Play client with controller support. | PS4/PS5 Remote |
+| **Doom** | Gaming | Classic 1993 Doom game running natively on the TV processor. | Retro Gaming |
+| **GameBoy Emulator** | Gaming | GameBoy & GBC retro emulator with Bluetooth gamepad support. | Retro Gaming |
+| **AirTizen** | Utilities | Apple AirPlay receiver for Samsung TVs without native AirPlay 2. | AirPlay Receiver |
+| **FCastReceiver** | Utilities | Open-source Chromecast alternative to cast media from phone without Google services. | Wireless Casting |
+| **Tailscale** | Utilities | Native TPK mesh VPN (WireGuard) to access your home server securely from anywhere. | WireGuard Mesh VPN |
+| **iperf3** | Utilities | Direct network bandwidth tester to diagnose Wi-Fi / Ethernet streaming speeds. | Bandwidth Tester |
 
 ### 4. Real-Time Streaming & Installation
 ```text
@@ -200,7 +229,7 @@ Launching app on TV...
 * **Live TV Dashboard:** Displays TV online status, TV Model Name, Tizen OS version, hardware DUID, and **Available TV Storage Space** (`df -h`).
 * **Live OS Compatibility Checker:** The App Store compares your TV's Tizen version against each app's requirements and tags them with `[Compatible]` or `[Incompatible]`.
 * **Auto TV Discovery:** Automatically scans your local Wi-Fi subnet across all 254 addresses to find your TV's SDB port (`26101`) in seconds.
-* **1-Click Community App Store:** Download and install 19+ popular pre-signed apps (including Jellyfin OSA/OG variants), plus an instant live directory browser with access to **50+ community packages** (IPTV players, KickTV, retro emulators, security camera feeds, and utilities).
+* **1-Click Community App Store & Dedicated Streaming Suite:** Download and install 29+ popular pre-signed apps with a dedicated Streaming Hub featuring Jellyfin (Pure OG & OSA), the complete Litefin family (6 builds), Moonfin AVPlay suite, and Pelagica TV, plus an instant live directory browser with access to **50+ community packages** (IPTV players, KickTV, retro emulators, security camera feeds, and utilities).
 * **Smart Ranked Uninstaller:** Queries TV package activity and sorts apps from **Least Used to Frequently Used**, making it easy to free up space.
 * **Integrated Auto-Updater:** Press `[u]` inside the menu or run `./setup.sh` to automatically pull updates from GitHub.
 * **Every-Step Error Explainer:** If any step fails (Wi-Fi, signature, permissions, or storage), it prints a clear diagnostic explaining what happened and provides an exact 1-2-3 fix.
@@ -226,6 +255,9 @@ Every application available in the 1-click community store was created, ported, 
 * **[reisxd](https://github.com/reisxd):** Creator of **TizenBrew** (standalone homebrew loader & package signer) and **TizenTube** (ad-free TV YouTube framework).
 * **[Apps2Samsung](https://github.com/Apps2Samsung):** For maintaining community package repository builds, automated signing actions, and hosting distribution mirrors.
 * **[Jellyfin Project](https://jellyfin.org/):** For the native Jellyfin TV client and open-source media ecosystem.
+* **[MoazSalem](https://github.com/MoazSalem):** For **Litefin**, the high-performance, lightweight Jellyfin client for Tizen & webOS with AVPlay backend and native ASS subtitle rendering.
+* **[Moonfin-Client](https://github.com/Moonfin-Client):** For **Moonfin Smart-TV**, the remote-first AVPlay hardware-accelerated Jellyfin client with lossless audio and Moonbase sync.
+* **[PelagicaApp](https://github.com/PelagicaApp):** For **Pelagica**, the modern responsive web & TV client for Jellyfin.
 * **[Stremio](https://www.stremio.com/):** For the official and community Tizen smart TV streaming application port.
 * **[VideoLAN (VLC)](https://www.videolan.org/):** For the VLC media engine and [PatrickSt1991](https://github.com/PatrickSt1991) for the VLC Tizen TV port.
 * **[fgl27](https://github.com/fgl27):** For **SmartTV_Twitch**, the open-source ad-free Twitch client for Tizen.

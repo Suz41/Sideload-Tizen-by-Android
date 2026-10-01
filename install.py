@@ -98,7 +98,7 @@ def download_file_with_progress(url, dest_path, desc=None):
 def menu_browse_all_upstream(tv_ip):
     """Dynamically fetch and list all 50+ community apps from Apps2Samsung repo."""
     print(f"\n{CYAN}[INFO] Fetching complete live community repository catalog...{RESET}")
-    api_url = "https://api.github.com/repos/Apps2Samsung/tizen-community-packages/releases/tags/community-611"
+    api_url = "https://api.github.com/repos/Apps2Samsung/tizen-community-packages/releases/latest"
     req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
     import json
     try:
@@ -120,7 +120,7 @@ def menu_browse_all_upstream(tv_ip):
     choice = input(f"\n{BOLD}> Select package [1-{len(assets)}] or 0 to cancel: {RESET}").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(assets):
         target_name = assets[int(choice)-1]
-        dl_url = f"https://github.com/Apps2Samsung/tizen-community-packages/releases/download/community-611/{target_name}"
+        dl_url = f"https://github.com/Apps2Samsung/tizen-community-packages/releases/latest/download/{target_name}"
         if not os.path.exists(target_name):
             if not download_file_with_progress(dl_url, target_name, target_name):
                 input(f"\n{DIM}Press Enter to return...{RESET}")
@@ -128,7 +128,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.3.3"
+SCRIPT_VERSION = "2.5.0"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -354,25 +354,52 @@ def scan_network_for_tv(phone_ip=None):
 CONFIG_FILE = os.path.expanduser("~/.tizen_tv_ip")
 
 COMMUNITY_APPS = {
-    "1": {"name": "TizenBrew (Homebrew App Store)", "file": "TizenBrew.wgt", "ver": "v2.0.5", "cat": "Framework", "min_tizen": "4.0"},
-    "2": {"name": "TizenTube (Ad-free YouTube)", "file": "TizenTube.wgt", "ver": "v0.8.2", "cat": "Streaming", "min_tizen": "4.0"},
-    "3": {"name": "Jellyfin TV (OSA) [Recommended]", "file": "Jellyfin-OSA.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OSA.wgt"},
-    "4": {"name": "Jellyfin TV (OG - Official Stable)", "file": "Jellyfin.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin.wgt"},
-    "5": {"name": "Jellyfin TV (GrayFix)", "file": "Jellyfin-GrayFix.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-GrayFix.wgt"},
-    "6": {"name": "Jellyfin TV (OblongIcon)", "file": "Jellyfin-OblongIcon.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OblongIcon.wgt"},
-    "7": {"name": "Jellyfin TV (Secondary Instance)", "file": "Jellyfin-secondary.wgt", "ver": "Latest", "cat": "Streaming", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-secondary.wgt"},
-    "8": {"name": "Jellyfin TV (Legacy Tizen 2.4-4)", "file": "Jellyfin-legacy.wgt", "ver": "v10.8.z", "cat": "Streaming", "min_tizen": "2.4", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/download/2024-10-27-1821/Jellyfin.wgt"},
-    "9": {"name": "Stremio TV (Community App)", "file": "Stremio-Tizen4.wgt", "ver": "v1.7.0", "cat": "Streaming", "min_tizen": "4.0"},
-    "10": {"name": "SmartTV Twitch (Ad-free Twitch)", "file": "SmartTV_Twitch.wgt", "ver": "v1.4.1", "cat": "Streaming", "min_tizen": "5.0"},
-    "11": {"name": "VLC Media Player", "file": "VLC-TV.wgt", "ver": "v3.0.18", "cat": "Media", "min_tizen": "5.0"},
-    "12": {"name": "Moonlight TV (PC Game Stream 4K)", "file": "Moonlight-Tizen.wgt", "ver": "v1.6.0", "cat": "Gaming", "min_tizen": "5.5"},
-    "13": {"name": "Chiaki (PlayStation Remote Play)", "file": "Chiaki-Tizen.wgt", "ver": "v2.2.0", "cat": "Gaming", "min_tizen": "5.5"},
-    "14": {"name": "Doom (Classic Doom Port)", "file": "Doom.wgt", "ver": "v1.1", "cat": "Gaming", "min_tizen": "4.0"},
-    "15": {"name": "GameBoy Emulator", "file": "GameBoy-Emulator.wgt", "ver": "v1.0", "cat": "Gaming", "min_tizen": "4.0"},
-    "16": {"name": "AirTizen (Apple AirPlay)", "file": "AirTizen.wgt", "ver": "v0.3.1", "cat": "Utilities", "min_tizen": "5.5"},
-    "17": {"name": "FCastReceiver (Chromecast Alt)", "file": "FCastReceiver.wgt", "ver": "v1.2.0", "cat": "Utilities", "min_tizen": "5.0"},
-    "18": {"name": "Tailscale (Mesh VPN Client - TPK)", "file": "Tailscale.tpk", "ver": "v1.78.1", "cat": "Utilities", "min_tizen": "5.0"},
-    "19": {"name": "iperf3 (Network Speed Tester)", "file": "iperf3-TV.wgt", "ver": "v3.16", "cat": "Utilities", "min_tizen": "4.0"}
+    # --- Framework ---
+    "1": {"name": "TizenBrew (Homebrew App Store)", "file": "TizenBrew.wgt", "ver": "v2.0.5", "cat": "Framework", "min_tizen": "4.0", "url": "https://github.com/Apps2Samsung/tizen-community-packages/releases/latest/download/TizenBrew.wgt", "desc": "Package runner & standalone homebrew loader"},
+
+    # --- Streaming: Jellyfin Official & Builds ---
+    "2": {"name": "Jellyfin TV (OSA)", "file": "Jellyfin-OSA.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OSA.wgt", "desc": "Native AVPlay hardware engine + Smart Hub ribbon preview"},
+    "3": {"name": "Jellyfin TV (OG - Official Stable) [Recommended]", "file": "Jellyfin.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin.wgt", "desc": "Official upstream stable vanilla web client build (pure OG) [Recommended]"},
+    "4": {"name": "Jellyfin TV (GrayFix)", "file": "Jellyfin-GrayFix.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-GrayFix.wgt", "desc": "Fixes washed-out gray letterbox bars on movies"},
+    "5": {"name": "Jellyfin TV (OblongIcon)", "file": "Jellyfin-OblongIcon.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-OblongIcon.wgt", "desc": "Wide rectangular tile for modern Samsung TV home UI"},
+    "6": {"name": "Jellyfin TV (Secondary Instance)", "file": "Jellyfin-secondary.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-secondary.wgt", "desc": "Alternate App ID for dual server setups side-by-side"},
+    "7": {"name": "Jellyfin TV (Legacy Tizen 2.4-4)", "file": "Jellyfin-legacy.wgt", "ver": "v10.8.z", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "2.4", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/download/2024-10-27-1821/Jellyfin.wgt", "desc": "Compatible build for older 2015-2018 TVs (Tizen 2.4-4.0)"},
+
+    # --- Streaming: Litefin High-Performance Client (All Versions) ---
+    "8": {"name": "Litefin TV (Normal - Stable)", "file": "Litefin-Normal.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal.wgt", "desc": "Ultra-responsive client with AVPlay backend & ASS/PGS subtitles"},
+    "9": {"name": "Litefin TV (Modern - Fast WebView)", "file": "Litefin-Modern.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "6.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Modern.wgt", "desc": "Optimized ES6+ build for modern Tizen 6.0+ WebViews"},
+    "10": {"name": "Litefin TV (Normal - Oblong Icon)", "file": "Litefin-Oblong.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal-Oblong.wgt", "desc": "Standard stable Litefin with horizontal home screen tile"},
+    "11": {"name": "Litefin TV (Legacy Tizen 3-4)", "file": "Litefin-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "3.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Legacy.wgt", "desc": "Backward-compatible build for Tizen 3.0 & 4.0 models"},
+    "12": {"name": "Litefin TV (Ultra-Legacy Tizen 2.4)", "file": "Litefin-Ultra-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy.wgt", "desc": "Polyfilled build for vintage 2015-2016 Tizen 2.4 TVs"},
+    "13": {"name": "Litefin TV (Ultra-Legacy NoService)", "file": "Litefin-Ultra-Legacy-NoService.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy-NoService.wgt", "desc": "No background service (bypasses security blocks & error -14)"},
+
+    # --- Streaming: Moonfin Remote-First AVPlay Client ---
+    "14": {"name": "Moonfin TV (Regular - AVPlay)", "file": "Moonfin-Regular.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Regular_2.9.0.wgt", "desc": "Premium remote-first client with lossless audio passthrough & Moonbase sync"},
+    "15": {"name": "Moonfin TV (Oblong Icon)", "file": "Moonfin-Oblong.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Oblong_2.9.0.wgt", "desc": "Moonfin with rectangular home screen banner icon"},
+    "16": {"name": "Moonfin TV (Legacy Tizen 3-4)", "file": "Moonfin-Legacy.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "3.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Legacy_2.9.0.wgt", "desc": "Moonfin client adapted for older Tizen 3.0 & 4.0 TVs"},
+
+    # --- Streaming: Pelagica Client ---
+    "17": {"name": "Pelagica TV (Modern Client)", "file": "pelagica-tizen.wgt", "ver": "v4.11.1", "cat": "Streaming", "subcat": "Pelagica Modern Client", "min_tizen": "5.0", "url": "https://github.com/PelagicaApp/pelagica/releases/download/4.11.1/pelagica-tizen-4.11.1.wgt", "desc": "Sleek, modern web & TV client for Jellyfin with multi-server support"},
+
+    # --- Streaming: Video Platforms & Torrent ---
+    "18": {"name": "TizenTube (Ad-free YouTube)", "file": "TizenTube.wgt", "ver": "v0.8.2", "cat": "Streaming", "subcat": "Video & Live Streaming", "min_tizen": "4.0", "desc": "Ad-free YouTube with SponsorBlock, Return Dislike, and 4K HDR"},
+    "19": {"name": "Stremio TV (Community App)", "file": "Stremio-Tizen4.wgt", "ver": "v1.7.0", "cat": "Streaming", "subcat": "Video & Live Streaming", "min_tizen": "4.0", "desc": "Torrent & Real-Debrid streaming media aggregator"},
+    "20": {"name": "SmartTV Twitch (Ad-free Twitch)", "file": "SmartTV_Twitch.wgt", "ver": "v1.4.1", "cat": "Streaming", "subcat": "Video & Live Streaming", "min_tizen": "5.0", "desc": "Ad-free Twitch client with BTTV / 7TV / FFZ chat emotes"},
+
+    # --- Media ---
+    "21": {"name": "VLC Media Player", "file": "VLC-TV.wgt", "ver": "v3.0.18", "cat": "Media", "min_tizen": "5.0", "desc": "Native media player for USB drives & local SMB/DLNA shares"},
+
+    # --- Gaming ---
+    "22": {"name": "Moonlight TV (PC Game Stream 4K)", "file": "Moonlight-Tizen.wgt", "ver": "v1.6.0", "cat": "Gaming", "min_tizen": "5.5", "desc": "4K 60/120fps low-latency PC game streaming via Sunshine/GameStream"},
+    "23": {"name": "Chiaki (PlayStation Remote Play)", "file": "Chiaki-Tizen.wgt", "ver": "v2.2.0", "cat": "Gaming", "min_tizen": "5.5", "desc": "PlayStation 4 & PlayStation 5 Remote Play with controller support"},
+    "24": {"name": "Doom (Classic Doom Port)", "file": "Doom.wgt", "ver": "v1.1", "cat": "Gaming", "min_tizen": "4.0", "desc": "Classic 1993 Doom game running natively on the TV processor"},
+    "25": {"name": "GameBoy Emulator", "file": "GameBoy-Emulator.wgt", "ver": "v1.0", "cat": "Gaming", "min_tizen": "4.0", "desc": "GameBoy & GBC retro emulator with Bluetooth gamepad support"},
+
+    # --- Utilities ---
+    "26": {"name": "AirTizen (Apple AirPlay)", "file": "AirTizen.wgt", "ver": "v0.3.1", "cat": "Utilities", "min_tizen": "5.5", "desc": "Apple AirPlay receiver for Samsung TVs without native AirPlay 2"},
+    "27": {"name": "FCastReceiver (Chromecast Alt)", "file": "FCastReceiver.wgt", "ver": "v1.2.0", "cat": "Utilities", "min_tizen": "5.0", "desc": "Open-source Chromecast alternative to cast media from phone"},
+    "28": {"name": "Tailscale (Mesh VPN Client - TPK)", "file": "Tailscale.tpk", "ver": "v1.78.1", "cat": "Utilities", "min_tizen": "5.0", "desc": "Native TPK WireGuard mesh VPN client for secure remote access"},
+    "29": {"name": "iperf3 (Network Speed Tester)", "file": "iperf3-TV.wgt", "ver": "v3.16", "cat": "Utilities", "min_tizen": "4.0", "desc": "Direct network bandwidth tester for Wi-Fi / Ethernet streaming speeds"}
 }
 
 def get_saved_tv_ip():
@@ -672,7 +699,7 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
 
     total_time = time.time() - t0
     bar_full = "█" * 20
-    print(f"\r│  {GREEN}✔ Installing on TV: ╢{CYAN}{bar_full}{GREEN}╟ 100% ({total_time:.1f}s){RESET}")
+    print(f"\r│  {GREEN}[OK] Installing on TV: ╢{CYAN}{bar_full}{GREEN}╟ 100% ({total_time:.1f}s){RESET}")
 
     r1, r2 = install_res["r1"], install_res["r2"]
     if r1: print(f"│  TV Daemon (vd_appinstall): {r1}")
@@ -701,22 +728,22 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     w = 64
     if is_installed or any(k in (r1 + " " + r2 + " " + r3).lower() for k in ["success", "val=0", "passed", "installing[100]", "install completed"]):
         print("╭" + "─" * (w - 2) + "╮")
-        print(pad_row(f"{GREEN}{BOLD}🎉 SUCCESS: APP INSTALLED & LAUNCHED!{RESET}", w))
+        print(pad_row(f"{GREEN}{BOLD}SUCCESS: APP INSTALLED & LAUNCHED!{RESET}", w))
         print("├" + "─" * (w - 2) + "┤")
         print(pad_row(f"Package ID : {CYAN}{final_pkg_id}{RESET}", w))
         print(pad_row(f"App ID     : {CYAN}{final_app_id}{RESET}", w))
         print(pad_row(f"Status     : {GREEN}Registered in TV Sandbox [OK]{RESET}", w))
         print("├" + "─" * (w - 2) + "┤")
         print(pad_row(f"{BOLD}HOW TO PIN TO YOUR TV HOME BAR:{RESET}", w))
-        print(pad_row(f"1. On TV remote, press {BOLD}Home{RESET} ➔ navigate to {BOLD}Apps{RESET}", w))
-        print(pad_row(f"2. Click the {BOLD}Settings (Gear ⚙️ icon){RESET} at top-right", w))
+        print(pad_row(f"1. On TV remote, press {BOLD}Home{RESET} -> navigate to {BOLD}Apps{RESET}", w))
+        print(pad_row(f"2. Click the {BOLD}Settings (Gear Icon){RESET} at top-right", w))
         print(pad_row(f"3. Scroll to {CYAN}{final_pkg_id}{RESET} in downloaded apps", w))
         print(pad_row(f"4. Select {GREEN}'Add to Home'{RESET} to pin to bottom ribbon", w))
         print("╰" + "─" * (w - 2) + "╯\n")
         return True
     else:
         print("╭" + "─" * (w - 2) + "╮")
-        print(pad_row(f"{YELLOW}{BOLD}⚠ NOTICE: App file pushed, but TV rejected install{RESET}", w))
+        print(pad_row(f"{YELLOW}{BOLD}[!] NOTICE: App file pushed, but TV rejected install{RESET}", w))
         print("├" + "─" * (w - 2) + "┤")
         print(pad_row(f"{BOLD}ROOT CAUSE & FAST SOLUTIONS:{RESET}", w))
         print(pad_row(f"1. {GREEN}Cold Reboot TV (Most Important){RESET}:", w))
@@ -727,8 +754,8 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         print(pad_row(f"   blocked by Samsung Tizen 5.5 retail security.", w))
         print(pad_row(f"3. {GREEN}Alternative: Sideload TizenBrew{RESET}:", w))
         print(pad_row(f"   TizenBrew installs easily & loads Jellyfin inside.", w))
-        print(pad_row(f"4. {GREEN}Check TV Settings (Gear ⚙️){RESET}:", w))
-        print(pad_row(f"   Open Apps ➔ Settings ⚙️ to check if installed.", w))
+        print(pad_row(f"4. {GREEN}Check TV Settings (Gear Icon){RESET}:", w))
+        print(pad_row(f"   Open Apps -> Settings to check if installed.", w))
         print("╰" + "─" * (w - 2) + "╯\n")
         return False
 
@@ -781,14 +808,14 @@ def menu_list_installed_apps(tv_ip):
     clear_screen()
     w = 64
     print(f"{PURPLE}╭" + "─" * (w - 2) + f"╮{RESET}")
-    print(pad_row(f"{BOLD}📱 TV & PHONE APPLICATION MANAGER{RESET}", w))
+    print(pad_row(f"{BOLD}TV & PHONE APPLICATION MANAGER{RESET}", w))
     print(f"{PURPLE}╰" + "─" * (w - 2) + f"╯\n")
 
     print(f"{BOLD}{CYAN}1. COMMUNITY APPS REGISTERED ON SAMSUNG TV:{RESET}")
     print(f"{DIM}" + "─" * w + f"{RESET}")
     tv_apps = get_installed_apps_list(tv_ip)
     if not tv_apps:
-        print(f"  {YELLOW}● 0 apps currently registered in TV User 5001 sandbox.{RESET}")
+        print(f"  {YELLOW}[*] 0 apps currently registered in TV User 5001 sandbox.{RESET}")
         print(f"    {DIM}(If you just installed an app, cold reboot TV with remote to activate){RESET}")
     else:
         for idx, app in enumerate(tv_apps, 1):
@@ -799,7 +826,7 @@ def menu_list_installed_apps(tv_ip):
     print(f"{DIM}" + "─" * w + f"{RESET}")
     local_pkgs = get_local_packages()
     if not local_pkgs:
-        print(f"  {YELLOW}● No local packages found. Download some from Option [2] Community Store!{RESET}")
+        print(f"  {YELLOW}[*] No local packages found. Download some from Option [2] Community Store!{RESET}")
     else:
         for idx, (full_p, fname, origin) in enumerate(local_pkgs, 1):
             ext = "TPK" if fname.endswith(".tpk") else "WGT"
@@ -879,6 +906,62 @@ def menu_sideload_local(tv_ip):
         stream_and_install_wgt(tv_ip, target_path)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
+def _handle_app_install(tv_ip, app, tv_ver, tv_ver_str):
+    """Download and stream-install an application package."""
+    min_req = float(app.get("min_tizen", "4.0"))
+    if tv_ver < min_req:
+        print(f"\n{YELLOW}[!] Warning: This app requires Tizen {min_req}+, but your TV is Tizen {tv_ver_str}.{RESET}")
+        c_anyway = input(f"{BOLD}Attempt install anyway? [y/N]: {RESET}").strip().lower()
+        if c_anyway != "y":
+            return
+
+    wgt_file = app["file"]
+    base_url = "https://github.com/Apps2Samsung/tizen-community-packages/releases/latest/download/"
+    download_url = app.get("url", base_url + wgt_file)
+
+    if not os.path.exists(wgt_file):
+        if not download_file_with_progress(download_url, wgt_file, app["name"]):
+            input(f"\n{DIM}Press Enter to return...{RESET}")
+            return
+    stream_and_install_wgt(tv_ip, wgt_file, app.get("app_id"))
+
+def menu_streaming_suite(tv_ip):
+    """Dedicated Streaming section featuring Jellyfin, Litefin, Moonfin, Pelagica, and Video platforms."""
+    tv_info = get_tv_details(tv_ip)
+    tv_ver_str = tv_info.get("tizen", "6.0")
+    try:
+        found = re.findall(r"\d+\.\d+", tv_ver_str)
+        tv_ver = float(found[0]) if found else 6.0
+    except Exception:
+        tv_ver = 6.0
+
+    print(f"\n{BOLD}{PURPLE}╭── [STREAMING SUITE & JELLYFIN CLIENTS] ────────────────────────╮{RESET}")
+    print(f"│  {BOLD}TV OS: Tizen {tv_ver_str}{RESET} │ {GREEN}Jellyfin (OSA/OG) - Litefin - Moonfin - Pelagica{RESET}")
+    print(f"{PURPLE}╰───────────────────────────────────────────────────────────────╯{RESET}")
+
+    streaming_apps = {k: v for k, v in COMMUNITY_APPS.items() if v.get("cat") == "Streaming"}
+    current_subcat = None
+    for k, v in streaming_apps.items():
+        subcat = v.get("subcat", "Other Streaming")
+        if subcat != current_subcat:
+            current_subcat = subcat
+            print(f"\n  {BOLD}{YELLOW}>> {subcat}{RESET}")
+        min_req = float(v.get("min_tizen", "4.0"))
+        compat_tag = f"{GREEN}[OK]{RESET}" if tv_ver >= min_req else f"{RED}[Needs Tizen {min_req}+]{RESET}"
+        ext = "TPK" if v.get("file", "").endswith(".tpk") else "WGT"
+        print(f"    {CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(38)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
+        if 'desc' in v:
+            print(f"         {DIM}- {v['desc']}{RESET}")
+
+    print(f"\n{DIM}" + "-" * 66 + f"{RESET}")
+    choice = input(f"\n{BOLD}> Select streaming app to install [2-20] or 0 to return: {RESET}").strip()
+    if choice in streaming_apps:
+        app = streaming_apps[choice]
+        _handle_app_install(tv_ip, app, tv_ver, tv_ver_str)
+    elif choice != "0" and choice != "":
+        print(f"{RED}Invalid selection.{RESET}")
+    input(f"\n{DIM}Press Enter to return...{RESET}")
+
 def menu_download_app(tv_ip):
     tv_info = get_tv_details(tv_ip)
     tv_ver_str = tv_info.get("tizen", "6.0")
@@ -889,42 +972,38 @@ def menu_download_app(tv_ip):
         tv_ver = 6.0
 
     print(f"\n{BOLD}[STORE] Pre-Signed Community App Store{RESET}  {DIM}(TV OS: Tizen {tv_ver_str}){RESET}")
-    print(f"{DIM}" + "-" * 64 + f"{RESET}")
+    print(f"{DIM}" + "-" * 66 + f"{RESET}")
+    print(f"  {PURPLE}[s]{RESET} {BOLD}Filter: Streaming Suite Only (Jellyfin, Litefin, Moonfin, Pelagica){RESET}")
+    print(f"{DIM}" + "-" * 66 + f"{RESET}")
     categories = ["Framework", "Streaming", "Media", "Gaming", "Utilities"]
+    current_subcat = None
     for cat in categories:
         print(f"\n{BOLD}{CYAN}> {cat.upper()}{RESET}")
         for k, v in COMMUNITY_APPS.items():
             if v.get("cat") == cat:
+                subcat = v.get("subcat")
+                if cat == "Streaming" and subcat and subcat != current_subcat:
+                    current_subcat = subcat
+                    print(f"  {YELLOW}>> {subcat}{RESET}")
                 min_req = float(v.get("min_tizen", "4.0"))
                 compat_tag = f"{GREEN}Compatible [OK]{RESET}" if tv_ver >= min_req else f"{RED}Needs Tizen {min_req}+{RESET}"
                 ext = "TPK" if v.get("file", "").endswith(".tpk") else "WGT"
-                print(f"  {CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(38)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
+                prefix = "    " if (cat == "Streaming" and subcat) else "  "
+                print(f"{prefix}{CYAN}[{str(k).rjust(2)}]{RESET} {BOLD}{v['name'].ljust(38)}{RESET} [{CYAN}{ext}{RESET}] {DIM}{v.get('ver', '').ljust(7)}{RESET} ({compat_tag})")
 
     archive_idx = str(len(COMMUNITY_APPS) + 1)
     print(f"\n  {YELLOW}[{archive_idx}] [MORE] Browse Full Archive (50+ Community Packages)...{RESET}")
-    print(f"{DIM}" + "-" * 64 + f"{RESET}")
-    choice = input(f"\n{BOLD}> Select app [1-{archive_idx}] or 0 to cancel: {RESET}").strip()
-    if choice == archive_idx:
+    print(f"{DIM}" + "-" * 66 + f"{RESET}")
+    choice = input(f"\n{BOLD}> Select app [1-{archive_idx}], 's' for Streaming Suite, or 0 to cancel: {RESET}").strip().lower()
+    if choice == "s":
+        menu_streaming_suite(tv_ip)
+        return
+    elif choice == archive_idx:
         menu_browse_all_upstream(tv_ip)
         return
     elif choice in COMMUNITY_APPS:
         app = COMMUNITY_APPS[choice]
-        min_req = float(app.get("min_tizen", "4.0"))
-        if tv_ver < min_req:
-            print(f"\n{YELLOW}[!] Warning: This app requires Tizen {min_req}+, but your TV is Tizen {tv_ver_str}.{RESET}")
-            c_anyway = input(f"{BOLD}Attempt install anyway? [y/N]: {RESET}").strip().lower()
-            if c_anyway != "y":
-                return
-
-        wgt_file = app["file"]
-        base_url = "https://github.com/Apps2Samsung/tizen-community-packages/releases/download/community-611/"
-        download_url = app.get("url", base_url + wgt_file)
-
-        if not os.path.exists(wgt_file):
-            if not download_file_with_progress(download_url, wgt_file, app["name"]):
-                input(f"\n{DIM}Press Enter to return...{RESET}")
-                return
-        stream_and_install_wgt(tv_ip, wgt_file, app.get("app_id"))
+        _handle_app_install(tv_ip, app, tv_ver, tv_ver_str)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
 def main():
@@ -971,15 +1050,15 @@ def menu_diagnostic_health(tv_ip):
     clear_screen()
     w = 64
     print("╭" + "─" * (w - 2) + "╮")
-    print(pad_row(f"{BOLD}🩺 SAMSUNG TV DIAGNOSTIC & HEALTH MONITOR{RESET}", w))
+    print(pad_row(f"{BOLD}SAMSUNG TV DIAGNOSTIC & HEALTH MONITOR{RESET}", w))
     print("╰" + "─" * (w - 2) + "╯\n")
 
     phone_ip = get_local_wifi_ip()
     print(f"{BOLD}[1/5] Checking Phone Network Interface...{RESET}")
     if phone_ip:
-        print(f"      {GREEN}● PASS{RESET} : Phone IP detected as {BOLD}{phone_ip}{RESET}")
+        print(f"      {GREEN}[PASS]{RESET} : Phone IP detected as {BOLD}{phone_ip}{RESET}")
     else:
-        print(f"      {RED}● FAIL{RESET} : Unable to detect phone Wi-Fi/Hotspot IP")
+        print(f"      {RED}[FAIL]{RESET} : Unable to detect phone Wi-Fi/Hotspot IP")
 
     print(f"\n{BOLD}[2/5] Testing Samsung REST API (Port 8001)...{RESET}")
     details = get_tv_details(tv_ip)
@@ -987,18 +1066,18 @@ def menu_diagnostic_health(tv_ip):
         dev_mode = details.get("dev_mode", "UNKNOWN")
         dev_ip = details.get("dev_ip", "NONE")
         ip_match = (dev_ip == phone_ip)
-        print(f"      {GREEN}● PASS{RESET} : TV Model: {BOLD}{details.get('model')} ({details.get('name')}){RESET}")
+        print(f"      {GREEN}[PASS]{RESET} : TV Model: {BOLD}{details.get('model')} ({details.get('name')}){RESET}")
         print(f"             Tizen OS: {details.get('tizen')} │ CPU: {details.get('cpu_arch', 'armv7')}")
         print(f"             Developer Mode: {GREEN if dev_mode == 'ON' else RED}{dev_mode}{RESET}")
         if dev_mode == "ON":
             if ip_match:
-                print(f"             Host IP on TV: {GREEN}{dev_ip} [MATCHES PHONE ✓]{RESET}")
+                print(f"             Host IP on TV: {GREEN}{dev_ip} [MATCHES PHONE]{RESET}")
             else:
-                print(f"             Host IP on TV: {RED}{dev_ip} [MISMATCH! Phone is {phone_ip} ✗]{RESET}")
+                print(f"             Host IP on TV: {RED}{dev_ip} [MISMATCH! Phone is {phone_ip}]{RESET}")
         else:
             print(f"             {RED}[!] Developer Mode is OFF on TV! Turn it on via Apps -> 1-2-3-4-5{RESET}")
     else:
-        print(f"      {YELLOW}● WARN{RESET} : Port 8001 not responding (TV in deep standby or fast start disabled)")
+        print(f"      {YELLOW}[WARN]{RESET} : Port 8001 not responding (TV in deep standby or fast start disabled)")
 
     print(f"\n{BOLD}[3/5] Testing SDB Developer Daemon (Port 26101)...{RESET}")
     time.sleep(0.35)  # Rate-limiting cooldown for Samsung SDB daemon
@@ -1023,13 +1102,13 @@ def menu_diagnostic_health(tv_ip):
             time.sleep(0.4)
 
     if sdb_online:
-        print(f"      {GREEN}● PASS{RESET} : Port 26101 is open and responsive")
+        print(f"      {GREEN}[PASS]{RESET} : Port 26101 is open and responsive")
         if handshake_ok:
-            print(f"      {GREEN}● PASS{RESET} : SDB handshake successfully acknowledged by TV")
+            print(f"      {GREEN}[PASS]{RESET} : SDB handshake successfully acknowledged by TV")
         else:
-            print(f"      {YELLOW}● WARN{RESET} : SDB port open, handshake response unexpected")
+            print(f"      {YELLOW}[WARN]{RESET} : SDB port open, handshake response unexpected")
     else:
-        print(f"      {RED}● FAIL{RESET} : SDB connection error: {err_msg}")
+        print(f"      {RED}[FAIL]{RESET} : SDB connection error: {err_msg}")
 
     print(f"\n{BOLD}[4/5] Testing TV Sync File Transfer Channel...{RESET}")
     time.sleep(0.35)  # Rate-limiting cooldown
@@ -1052,29 +1131,29 @@ def menu_diagnostic_health(tv_ip):
         except Exception:
             time.sleep(0.4)
     if sync_ok:
-        print(f"      {GREEN}● PASS{RESET} : Sync channel ready at: {details.get('sdk_toolpath', '/home/owner/share/tmp/sdk_tools')}")
+        print(f"      {GREEN}[PASS]{RESET} : Sync channel ready at: {details.get('sdk_toolpath', '/home/owner/share/tmp/sdk_tools')}")
     else:
-        print(f"      {YELLOW}● WARN{RESET} : Sync channel not immediately available")
+        print(f"      {YELLOW}[WARN]{RESET} : Sync channel not immediately available")
 
     print(f"\n{BOLD}[5/5] Querying TV User 5001 App Registry...{RESET}")
     installed = get_installed_apps_list(tv_ip)
     if installed:
-        print(f"      {GREEN}● PASS{RESET} : {len(installed)} Community app(s) registered in User 5001 sandbox:")
+        print(f"      {GREEN}[PASS]{RESET} : {len(installed)} Community app(s) registered in User 5001 sandbox:")
         for idx, app in enumerate(installed, 1):
             print(f"             [{idx}] {BOLD}{app}{RESET}")
     else:
-        print(f"      {CYAN}● INFO{RESET} : 0 Community apps installed in User 5001 sandbox")
+        print(f"      {CYAN}[INFO]{RESET} : 0 Community apps installed in User 5001 sandbox")
 
     print(f"\n{DIM}" + "─" * w + f"{RESET}")
     print(f"{BOLD}DIAGNOSTIC SUMMARY & ADVICE:{RESET}")
     if not sdb_online:
-        print(f"  {RED}✖ CRITICAL:{RESET} Enable Developer Mode in TV Apps menu (1 2 3 4 5) & cold reboot.")
+        print(f"  {RED}[CRITICAL]:{RESET} Enable Developer Mode in TV Apps menu (1 2 3 4 5) & cold reboot.")
     elif details.get("dev_ip") and phone_ip and details.get("dev_ip") != phone_ip:
-        print(f"  {YELLOW}⚠ WARNING:{RESET} Host IP mismatch! In TV Apps (1 2 3 4 5), enter Host IP: {phone_ip}")
+        print(f"  {YELLOW}[WARNING]:{RESET} Host IP mismatch! In TV Apps (1 2 3 4 5), enter Host IP: {phone_ip}")
     else:
-        print(f"  {GREEN}✔ ALL SYSTEMS OPERATIONAL:{RESET} Your TV is fully ready for sideloading!")
-        print(f"  {CYAN}💡 TIP:{RESET} If an app doesn't show after installing, cold restart TV")
-        print(f"          (hold remote power 5s) & check TV Apps -> Settings (Gear ⚙️) -> Add to Home.")
+        print(f"  {GREEN}[OK] ALL SYSTEMS OPERATIONAL:{RESET} Your TV is fully ready for sideloading!")
+        print(f"  {CYAN}[TIP]:{RESET} If an app doesn't show after installing, cold restart TV")
+        print(f"          (hold remote power 5s) & check TV Apps -> Settings (Gear Icon) -> Add to Home.")
     print(f"{DIM}" + "─" * w + f"{RESET}")
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
@@ -1083,7 +1162,7 @@ def menu_reboot_guide(tv_ip):
     clear_screen()
     w = 64
     print("╭" + "─" * (w - 2) + "╮")
-    print(pad_row(f"{BOLD}🔄 SAMSUNG TV COLD REBOOT GUIDE{RESET}", w))
+    print(pad_row(f"{BOLD}SAMSUNG TV COLD REBOOT GUIDE{RESET}", w))
     print("├" + "─" * (w - 2) + "┤")
     print(pad_row(f"Target TV: {CYAN}{tv_ip}{RESET}", w))
     print("╰" + "─" * (w - 2) + "╯\n")
@@ -1105,7 +1184,7 @@ def menu_reboot_guide(tv_ip):
     print("  3. Plug the power cable back in and power on the TV.\n")
 
     print(f"{GREEN}{BOLD}METHOD 3: TV Settings Menu Reset{RESET}")
-    print("  On TV Remote: Settings ➔ Support ➔ Self Diagnosis ➔ Reset (or Restart).")
+    print("  On TV Remote: Settings -> Support -> Self Diagnosis -> Reset (or Restart).")
 
     print(f"\n{DIM}" + "─" * w + f"{RESET}")
     input(f"{DIM}Press Enter to return to menu...{RESET}")
@@ -1144,7 +1223,7 @@ def main():
         clear_screen()
         phone_ip = get_local_wifi_ip()
         is_online = check_tv_online(tv_ip)
-        status_badge = f"{GREEN}● ONLINE{RESET}" if is_online else f"{RED}○ OFFLINE{RESET}"
+        status_badge = f"{GREEN}[ONLINE]{RESET}" if is_online else f"{RED}[OFFLINE]{RESET}"
 
         tv_details = get_tv_details(tv_ip) if is_online else {}
         model_name = tv_details.get("model") or tv_details.get("name") or "Samsung Smart TV"
@@ -1160,7 +1239,7 @@ def main():
         w = 64
         border_c = PURPLE
         print(f"\n{border_c}╭" + "─" * (w - 2) + f"╮{RESET}")
-        print(pad_row(f"{BOLD}{MAGENTA}📺 SAMSUNG TIZEN SIDELOAD MANAGER{RESET}   {CYAN}v{SCRIPT_VERSION}{RESET}", w))
+        print(pad_row(f"{BOLD}{MAGENTA}SAMSUNG TIZEN SIDELOAD MANAGER{RESET}   {CYAN}v{SCRIPT_VERSION}{RESET}", w))
         print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
         print(pad_row(f"{BOLD}STATUS{RESET}     : {status_badge}  {CYAN}{tv_ip}:26101{RESET}", w))
         print(pad_row(f"{BOLD}PHONE IP{RESET}   : {GREEN}{BOLD}{phone_ip}{RESET} {DIM}(Wi-Fi){RESET}", w))
@@ -1171,8 +1250,8 @@ def main():
                 short_duid = duid[:20] + "..." if len(duid) > 20 else duid
                 print(pad_row(f"{BOLD}DUID{RESET}       : {DIM}{short_duid}{RESET}", w))
             if dev_mode:
-                ip_match_str = f"{GREEN}[MATCH ✓]{RESET}" if (dev_ip == phone_ip) else f"{RED}[MISMATCH ✗]{RESET}"
-                print(pad_row(f"{BOLD}DEV MODE{RESET}   : {GREEN}● {dev_mode}{RESET} (Host: {dev_ip or 'OK'}) {ip_match_str}", w))
+                ip_match_str = f"{GREEN}[MATCH OK]{RESET}" if (dev_ip == phone_ip) else f"{RED}[MISMATCH FAIL]{RESET}"
+                print(pad_row(f"{BOLD}DEV MODE{RESET}   : {GREEN}[ON]{RESET} (Host: {dev_ip or 'OK'}) {ip_match_str}", w))
             pkg_badge = f"{GREEN}{len(local_packages)} Packages Ready{RESET}" if local_packages else f"{YELLOW}0 Packages{RESET}"
             app_badge = f"{GREEN}{len(installed_apps)} Apps Installed{RESET}" if installed_apps else f"{YELLOW}0 Apps Registered{RESET}"
             print(pad_row(f"{BOLD}ON PHONE{RESET}   : {pkg_badge} {DIM}(.wgt / .tpk files){RESET}", w))
@@ -1180,38 +1259,41 @@ def main():
         print(f"{border_c}├" + "─" * (w - 2) + f"┤{RESET}")
 
         if is_online and dev_ip and phone_ip and dev_ip != phone_ip:
-            print(pad_row(f"{RED}{BOLD}⚠ HOST IP MISMATCH DETECTED:{RESET}", w))
+            print(pad_row(f"{RED}{BOLD}[!] HOST IP MISMATCH DETECTED:{RESET}", w))
             print(pad_row(f"  TV currently has Host IP : {RED}{dev_ip}{RESET}", w))
             print(pad_row(f"  Your Phone IP is         : {GREEN}{BOLD}{phone_ip}{RESET}", w))
-            print(pad_row(f"  ➔ Set Host IP in TV Apps (1-2-3-4-5) & Cold Reboot!", w))
+            print(pad_row(f"  -> Set Host IP in TV Apps (1-2-3-4-5) & Cold Reboot!", w))
         else:
             print(pad_row(f"{YELLOW}{BOLD}QUICK SETUP GUIDE:{RESET}", w))
-            print(pad_row(f"1. TV Apps ➔ Remote: {BOLD}1 2 3 4 5{RESET} ➔ Dev Mode {GREEN}[ON]{RESET}", w))
-            print(pad_row(f"2. In 'Host PC IP', enter   ➔ {GREEN}{BOLD}{phone_ip}{RESET}", w))
+            print(pad_row(f"1. TV Apps -> Remote: {BOLD}1 2 3 4 5{RESET} -> Dev Mode {GREEN}[ON]{RESET}", w))
+            print(pad_row(f"2. In 'Host PC IP', enter   -> {GREEN}{BOLD}{phone_ip}{RESET}", w))
             print(pad_row(f"3. Cold reboot TV (Hold Remote Power for 5s)", w))
         print(f"{border_c}╰" + "─" * (w - 2) + f"╯{RESET}")
 
         print(f"\n{BOLD}{PURPLE}╭── [SIDELOAD & PACKAGES] ──────────────────────────────────────╮{RESET}")
-        print(f"│  {CYAN}[1]{RESET} {BOLD}📦 Sideload Local Package{RESET}  {GREEN}({len(local_packages)} ready on phone){RESET}")
-        print(f"│  {CYAN}[2]{RESET} {BOLD}🏪 Community App Store{RESET}    {DIM}(TizenBrew, Jellyfin, VLC, 50+ apps){RESET}")
-        print(f"│  {CYAN}[3]{RESET} {BOLD}📱 App & Package Hub{RESET}      {DIM}({len(installed_apps)} on TV, {len(local_packages)} on phone){RESET}")
-        print(f"│  {CYAN}[4]{RESET} {BOLD}🗑️  Uninstall App from TV{RESET}")
+        print(f"│  {CYAN}[1]{RESET} {BOLD}Sideload Local Package{RESET}  {GREEN}({len(local_packages)} ready on phone){RESET}")
+        print(f"│  {CYAN}[2]{RESET} {BOLD}Community App Store{RESET}    {DIM}(TizenBrew, Gaming, Utilities, 50+ apps){RESET}")
+        print(f"│  {CYAN}[s]{RESET} {BOLD}Streaming Suite Hub{RESET}    {DIM}(Jellyfin OG/OSA, Litefin, Moonfin, Pelagica){RESET}")
+        print(f"│  {CYAN}[3]{RESET} {BOLD}App & Package Hub{RESET}      {DIM}({len(installed_apps)} on TV, {len(local_packages)} on phone){RESET}")
+        print(f"│  {CYAN}[4]{RESET} {BOLD}Uninstall App from TV{RESET}")
         print(f"{PURPLE}├── [DIAGNOSTICS & TV TOOLS] ───────────────────────────────────┤{RESET}")
-        print(f"│  {CYAN}[5]{RESET} {BOLD}🩺 TV Health & Diagnostic Monitor{RESET}")
-        print(f"│  {CYAN}[6]{RESET} {BOLD}🔄 TV Remote Cold Reboot Instructions{RESET}")
-        print(f"│  {CYAN}[7]{RESET} {BOLD}🌐 Change / Auto-Scan TV IP Address{RESET}")
+        print(f"│  {CYAN}[5]{RESET} {BOLD}TV Health & Diagnostic Monitor{RESET}")
+        print(f"│  {CYAN}[6]{RESET} {BOLD}TV Remote Cold Reboot Instructions{RESET}")
+        print(f"│  {CYAN}[7]{RESET} {BOLD}Change / Auto-Scan TV IP Address{RESET}")
         print(f"{PURPLE}├── [SYSTEM] ───────────────────────────────────────────────────┤{RESET}")
-        print(f"│  {CYAN}[u]{RESET} {BOLD}⬆️  Check for Updates{RESET}       {DIM}(Auto-restart){RESET}")
-        print(f"│  {CYAN}[r]{RESET} {BOLD}🔄 Refresh Dashboard{RESET}")
-        print(f"│  {CYAN}[0]{RESET} {BOLD}🚪 Exit{RESET}")
+        print(f"│  {CYAN}[u]{RESET} {BOLD}Check for Updates{RESET}       {DIM}(Auto-restart){RESET}")
+        print(f"│  {CYAN}[r]{RESET} {BOLD}Refresh Dashboard{RESET}")
+        print(f"│  {CYAN}[0]{RESET} {BOLD}Exit{RESET}")
         print(f"{PURPLE}╰───────────────────────────────────────────────────────────────╯{RESET}")
 
-        choice = input(f"{BOLD}> Select option [0-7, u, r]: {RESET}").strip().lower()
+        choice = input(f"{BOLD}> Select option [0-7, s, u, r]: {RESET}").strip().lower()
 
         if choice == "1":
             menu_sideload_local(tv_ip)
         elif choice == "2":
             menu_download_app(tv_ip)
+        elif choice == "s":
+            menu_streaming_suite(tv_ip)
         elif choice == "3":
             menu_list_installed_apps(tv_ip)
         elif choice == "4":

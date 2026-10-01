@@ -67,7 +67,7 @@ SAVED_TV_IP=$(cat "$HOME/.tizen_tv_ip" 2>/dev/null || echo "")
 
 clear
 echo "╭───────────────────────────────────────────────────────╮"
-echo "│  📺 SAMSUNG TIZEN TV SIDELOAD SETUP                   │"
+echo "│  SAMSUNG TIZEN TV SIDELOAD SETUP                      │"
 echo "├───────────────────────────────────────────────────────┤"
 echo "│  Put your .wgt / .tpk files in File Manager at:       │"
 echo "│  Internal Storage -> Download -> Samsung-T-Sideload   │"
