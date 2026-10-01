@@ -128,7 +128,7 @@ def menu_browse_all_upstream(tv_ip):
         stream_and_install_wgt(tv_ip, target_name)
     input(f"\n{DIM}Press Enter to return to menu...{RESET}")
 
-SCRIPT_VERSION = "2.5.0"
+SCRIPT_VERSION = "2.5.1"
 
 def get_git_update_status():
     """Check if local git repo is up-to-date with remote and display version numbers."""
@@ -188,15 +188,16 @@ def explain_tv_error(err_str, context="install"):
     elif any(k in err_lower for k in ["failed[-11]", "invalid signature", "signature verification", "signature missing"]):
         print(f" {RED}{BOLD}[STAGE] Digital Signature Verification Failed (Error -11){RESET}")
         print(f" {YELLOW}------------------------------------------------------------------------{RESET}")
-        print(" [CAUSE] Probable reason:")
-        print("    Package does not contain a valid Samsung Digital Certificate.")
-        print("    (Raw builds like NuvioTV.wgt do not have community certificates).")
+        print(" [CAUSE] Samsung TV rejected the package because it lacks a valid digital signature.")
+        print("    Raw GitHub release builds (Litefin, Moonfin, Nuvio) do NOT have Samsung certificates.")
+        print("    Retail Samsung TVs require packages to be signed for the TV's DUID.")
         print("")
-        print(f" {GREEN}{BOLD}[SOLUTION] Steps to fix:{RESET}")
-        print("    Step 1: Go back to Main Menu and choose Option [2].")
-        print("    Step 2: Install 'TizenBrew' (App #1). It has valid certificates.")
-        print("    Step 3: Open TizenBrew on your TV screen.")
-        print("    Step 4: Inside TizenBrew, select 'Add GitHub Module' and type app repo.")
+        print(f" {GREEN}{BOLD}[RECOMMENDED WORKING ALTERNATIVES]:{RESET}")
+        print("    Option 1: Sideload 'Jellyfin TV (OG)' [App #3] - Fully pre-signed & works 100%.")
+        print("    Option 2: Sideload 'Pelagica TV' [App #17] - Modern client, fully pre-signed.")
+        print("    Option 3: Sideload 'TizenBrew' [App #1] - Runs community modules directly.")
+        print("    Option 4: To run Litefin/Moonfin, use the 'Apps2Samsung' app which auto-provisions")
+        print("              a Samsung developer certificate for your TV DUID.")
 
     # STEP 3: CERTIFICATE MISMATCH (DUID / AUTHORITY)
     elif any(k in err_lower for k in ["failed[-12]", "author certificate", "duid mismatch"]):
@@ -365,18 +366,18 @@ COMMUNITY_APPS = {
     "6": {"name": "Jellyfin TV (Secondary Instance)", "file": "Jellyfin-secondary.wgt", "ver": "Latest", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "5.0", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/latest/download/Jellyfin-secondary.wgt", "desc": "Alternate App ID for dual server setups side-by-side"},
     "7": {"name": "Jellyfin TV (Legacy Tizen 2.4-4)", "file": "Jellyfin-legacy.wgt", "ver": "v10.8.z", "cat": "Streaming", "subcat": "Jellyfin Official & Mod Builds", "min_tizen": "2.4", "url": "https://github.com/jeppevinkel/jellyfin-tizen-builds/releases/download/2024-10-27-1821/Jellyfin.wgt", "desc": "Compatible build for older 2015-2018 TVs (Tizen 2.4-4.0)"},
 
-    # --- Streaming: Litefin High-Performance Client (All Versions) ---
-    "8": {"name": "Litefin TV (Normal - Stable)", "file": "Litefin-Normal.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal.wgt", "desc": "Ultra-responsive client with AVPlay backend & ASS/PGS subtitles"},
-    "9": {"name": "Litefin TV (Modern - Fast WebView)", "file": "Litefin-Modern.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "6.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Modern.wgt", "desc": "Optimized ES6+ build for modern Tizen 6.0+ WebViews"},
-    "10": {"name": "Litefin TV (Normal - Oblong Icon)", "file": "Litefin-Oblong.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal-Oblong.wgt", "desc": "Standard stable Litefin with horizontal home screen tile"},
-    "11": {"name": "Litefin TV (Legacy Tizen 3-4)", "file": "Litefin-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "3.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Legacy.wgt", "desc": "Backward-compatible build for Tizen 3.0 & 4.0 models"},
-    "12": {"name": "Litefin TV (Ultra-Legacy Tizen 2.4)", "file": "Litefin-Ultra-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy.wgt", "desc": "Polyfilled build for vintage 2015-2016 Tizen 2.4 TVs"},
-    "13": {"name": "Litefin TV (Ultra-Legacy NoService)", "file": "Litefin-Ultra-Legacy-NoService.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy-NoService.wgt", "desc": "No background service (bypasses security blocks & error -14)"},
+    # --- Streaming: Litefin High-Performance Client (All Versions - Unsigned) ---
+    "8": {"name": "Litefin TV (Normal - Stable) [Unsigned]", "file": "Litefin-Normal.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal.wgt", "desc": "Ultra-responsive client (raw upstream build - requires Samsung cert re-signing)"},
+    "9": {"name": "Litefin TV (Modern - Fast WebView) [Unsigned]", "file": "Litefin-Modern.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "6.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Modern.wgt", "desc": "Optimized ES6+ build (raw upstream build - requires Samsung cert re-signing)"},
+    "10": {"name": "Litefin TV (Normal - Oblong Icon) [Unsigned]", "file": "Litefin-Oblong.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "5.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Normal-Oblong.wgt", "desc": "Standard stable Litefin with horizontal tile (unsigned)"},
+    "11": {"name": "Litefin TV (Legacy Tizen 3-4) [Unsigned]", "file": "Litefin-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "3.0", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Legacy.wgt", "desc": "Backward-compatible build for Tizen 3.0 & 4.0 models (unsigned)"},
+    "12": {"name": "Litefin TV (Ultra-Legacy Tizen 2.4) [Unsigned]", "file": "Litefin-Ultra-Legacy.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy.wgt", "desc": "Polyfilled build for vintage 2015-2016 Tizen 2.4 TVs (unsigned)"},
+    "13": {"name": "Litefin TV (Ultra-Legacy NoService) [Unsigned]", "file": "Litefin-Ultra-Legacy-NoService.wgt", "ver": "v1.9.0", "cat": "Streaming", "subcat": "Litefin High-Performance Client [Unsigned - Needs Signing]", "min_tizen": "2.4", "url": "https://github.com/MoazSalem/litefin/releases/download/v1.9.0/Litefin-1.9.0-Tizen-Ultra-Legacy-NoService.wgt", "desc": "No background service build (unsigned)"},
 
-    # --- Streaming: Moonfin Remote-First AVPlay Client ---
-    "14": {"name": "Moonfin TV (Regular - AVPlay)", "file": "Moonfin-Regular.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Regular_2.9.0.wgt", "desc": "Premium remote-first client with lossless audio passthrough & Moonbase sync"},
-    "15": {"name": "Moonfin TV (Oblong Icon)", "file": "Moonfin-Oblong.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Oblong_2.9.0.wgt", "desc": "Moonfin with rectangular home screen banner icon"},
-    "16": {"name": "Moonfin TV (Legacy Tizen 3-4)", "file": "Moonfin-Legacy.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client", "min_tizen": "3.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Legacy_2.9.0.wgt", "desc": "Moonfin client adapted for older Tizen 3.0 & 4.0 TVs"},
+    # --- Streaming: Moonfin Remote-First AVPlay Client (Unsigned) ---
+    "14": {"name": "Moonfin TV (Regular - AVPlay) [Unsigned]", "file": "Moonfin-Regular.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client [Unsigned - Needs Signing]", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Regular_2.9.0.wgt", "desc": "Premium client (raw upstream build - requires Samsung cert re-signing)"},
+    "15": {"name": "Moonfin TV (Oblong Icon) [Unsigned]", "file": "Moonfin-Oblong.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client [Unsigned - Needs Signing]", "min_tizen": "5.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Oblong_2.9.0.wgt", "desc": "Moonfin with horizontal banner icon (unsigned)"},
+    "16": {"name": "Moonfin TV (Legacy Tizen 3-4) [Unsigned]", "file": "Moonfin-Legacy.wgt", "ver": "v2.9.0", "cat": "Streaming", "subcat": "Moonfin AVPlay Client [Unsigned - Needs Signing]", "min_tizen": "3.0", "url": "https://github.com/Moonfin-Client/Smart-TV/releases/download/2.9.0/Moonfin_Tizen_Legacy_2.9.0.wgt", "desc": "Moonfin client adapted for older Tizen 3.0 & 4.0 TVs (unsigned)"},
 
     # --- Streaming: Pelagica Client ---
     "17": {"name": "Pelagica TV (Modern Client)", "file": "pelagica-tizen.wgt", "ver": "v4.11.1", "cat": "Streaming", "subcat": "Pelagica Modern Client", "min_tizen": "5.0", "url": "https://github.com/PelagicaApp/pelagica/releases/download/4.11.1/pelagica-tizen-4.11.1.wgt", "desc": "Sleek, modern web & TV client for Jellyfin with multi-server support"},
@@ -726,7 +727,16 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
     print(f"╰─ {GREEN}[OK] Verification step complete.{RESET}\n")
 
     w = 64
-    if is_installed or any(k in (r1 + " " + r2 + " " + r3).lower() for k in ["success", "val=0", "passed", "installing[100]", "install completed"]):
+    combined_log = f"{r1} {r2} {r3}".lower()
+    has_failed = any(err in combined_log for err in ["failed[", "signature error", "invalid signature", "error :", "failed to install", "not available for the user", "cannot install"])
+
+    # True success requires TV registry confirmation OR clean pkgcmd completion with no failure indicators
+    clean_success = (
+        not has_failed
+        and any(k in combined_log for k in ["install completed", "spend time for pkgcmd", "val=0", "passed"])
+    )
+
+    if is_installed or clean_success:
         print("╭" + "─" * (w - 2) + "╮")
         print(pad_row(f"{GREEN}{BOLD}SUCCESS: APP INSTALLED & LAUNCHED!{RESET}", w))
         print("├" + "─" * (w - 2) + "┤")
@@ -743,20 +753,21 @@ def stream_and_install_wgt(tv_ip, wgt_path, app_id=None):
         return True
     else:
         print("╭" + "─" * (w - 2) + "╮")
-        print(pad_row(f"{YELLOW}{BOLD}[!] NOTICE: App file pushed, but TV rejected install{RESET}", w))
+        print(pad_row(f"{RED}{BOLD}[!] FAILED: TV REJECTED APP INSTALLATION{RESET}", w))
         print("├" + "─" * (w - 2) + "┤")
-        print(pad_row(f"{BOLD}ROOT CAUSE & FAST SOLUTIONS:{RESET}", w))
-        print(pad_row(f"1. {GREEN}Cold Reboot TV (Most Important){RESET}:", w))
-        print(pad_row(f"   Hold TV Remote Power for 5s until TV reboots", w))
-        print(pad_row(f"   to apply Developer Mode permissions.", w))
-        print(pad_row(f"2. {GREEN}Try Vanilla Jellyfin (OG){RESET}:", w))
-        print(pad_row(f"   Jellyfin-OSA requires a background service", w))
-        print(pad_row(f"   blocked by Samsung Tizen 5.5 retail security.", w))
-        print(pad_row(f"3. {GREEN}Alternative: Sideload TizenBrew{RESET}:", w))
-        print(pad_row(f"   TizenBrew installs easily & loads Jellyfin inside.", w))
-        print(pad_row(f"4. {GREEN}Check TV Settings (Gear Icon){RESET}:", w))
-        print(pad_row(f"   Open Apps -> Settings to check if installed.", w))
+        print(pad_row(f"Package ID : {CYAN}{final_pkg_id}{RESET}", w))
+        print(pad_row(f"App ID     : {CYAN}{final_app_id}{RESET}", w))
+        print(pad_row(f"Status     : {RED}Not registered on TV{RESET}", w))
         print("╰" + "─" * (w - 2) + "╯\n")
+
+        # Automatically run diagnostic explanation if error detected
+        raw_err = r2 if r2 else (r1 if r1 else "")
+        if not is_signed or "failed[-11]" in combined_log or "signature" in combined_log:
+            explain_tv_error("failed[-11] invalid signature (unsigned package)", context="install")
+        elif raw_err:
+            explain_tv_error(raw_err, context="install")
+        else:
+            explain_tv_error("failed[-1] app not found in TV registry after install", context="install")
         return False
 
 def get_local_packages():
